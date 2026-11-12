@@ -28,8 +28,7 @@ export const EstoquePage: React.FC = () => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<IngredientCategory>('ingrediente');
   const [purchaseUnit, setPurchaseUnit] = useState<PurchaseUnit>('kg');
-  const [initialQuantity, setInitialQuantity] = useState('');
-  const [initialPrice, setInitialPrice] = useState('');
+  const [unitCostPrice, setUnitCostPrice] = useState('');
   const [minStock, setMinStock] = useState('500');
 
   const filteredIngredients = ingredients.filter(ing => 
@@ -45,8 +44,7 @@ export const EstoquePage: React.FC = () => {
     setName('');
     setCategory('ingrediente');
     setPurchaseUnit('kg');
-    setInitialQuantity('');
-    setInitialPrice('');
+    setUnitCostPrice('');
     setMinStock('500');
     setIsModalOpen(true);
   };
@@ -56,8 +54,9 @@ export const EstoquePage: React.FC = () => {
     setName(ing.name);
     setCategory(ing.category);
     setPurchaseUnit(ing.purchaseUnit);
-    setInitialQuantity(ing.currentStock.toString());
-    setInitialPrice((ing.currentStock * ing.costPerBaseUnit).toFixed(2));
+    // Custo por quilo/litro/unidade original
+    const factor = (ing.purchaseUnit === 'kg' || ing.purchaseUnit === 'l') ? 1000 : 1;
+    setUnitCostPrice((ing.costPerBaseUnit * factor).toFixed(2));
     setMinStock(ing.minStock.toString());
     setIsModalOpen(true);
   };
@@ -83,46 +82,39 @@ export const EstoquePage: React.FC = () => {
     if (purchaseUnit === 'l' || purchaseUnit === 'ml') baseUnit = 'ml';
 
     const min = parseFloat(minStock.replace(',', '.')) || 0;
+    const price = parseFloat(unitCostPrice.replace(',', '.')) || 0;
+
+    // Se o preço foi informado por kg, divide por 1000 para saber o custo por grama
+    const baseQuantityFactor = convertToBaseUnit(1, purchaseUnit, baseUnit);
+    const costPerBase = baseQuantityFactor > 0 ? (price / baseQuantityFactor) : 0;
 
     if (editingIngredient) {
-      // Atualizando insumo existente
-      const updatedStock = parseFloat(initialQuantity.replace(',', '.')) || editingIngredient.currentStock;
-      const updatedPrice = parseFloat(initialPrice.replace(',', '.')) || 0;
-      const updatedCostPerBase = updatedStock > 0 ? (updatedPrice / updatedStock) : editingIngredient.costPerBaseUnit;
-
       updateIngredient({
         ...editingIngredient,
         name: name.trim(),
         category,
         purchaseUnit,
         baseUnit,
-        currentStock: updatedStock,
         minStock: min,
-        costPerBaseUnit: updatedCostPerBase > 0 ? updatedCostPerBase : editingIngredient.costPerBaseUnit
+        costPerBaseUnit: costPerBase > 0 ? costPerBase : editingIngredient.costPerBaseUnit
       });
 
       setFeedback({ text: `Insumo "${name}" atualizado com sucesso!`, type: 'success' });
     } else {
-      // Criando novo insumo
-      const qty = parseFloat(initialQuantity.replace(',', '.')) || 0;
-      const price = parseFloat(initialPrice.replace(',', '.')) || 0;
-      const baseStock = convertToBaseUnit(qty, purchaseUnit, baseUnit);
-      const costPerBase = baseStock > 0 ? (price / baseStock) : 0;
-
       addIngredient({
         name: name.trim(),
         category,
         purchaseUnit,
         baseUnit,
-        currentStock: baseStock,
+        currentStock: 0, // Começa em 0 para ser abastecido via Compras
         minStock: min,
         costPerBaseUnit: costPerBase,
       });
 
-      setFeedback({ text: `Insumo "${name}" cadastrado com sucesso!`, type: 'success' });
+      setFeedback({ text: `Insumo "${name}" cadastrado! O estoque inicial é 0. Lance as compras na página de Compras para abastecer o estoque.`, type: 'success' });
     }
 
-    setTimeout(() => setFeedback(null), 4000);
+    setTimeout(() => setFeedback(null), 5000);
     setIsModalOpen(false);
   };
 
@@ -389,37 +381,37 @@ export const EstoquePage: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Qtd Inicial Comprada</label>
+                  <label className="form-label">
+                    Preço de Custo (por {purchaseUnit.toUpperCase()})
+                  </label>
                   <input
                     type="text"
-                    placeholder="Ex: 2 ou 1.5"
+                    required
+                    placeholder={purchaseUnit === 'kg' ? 'Ex: 5.50 (preço do kg)' : 'Ex: 0.60 (preço unitário)'}
                     className="form-input"
-                    value={initialQuantity}
-                    onChange={(e) => setInitialQuantity(e.target.value)}
+                    value={unitCostPrice}
+                    onChange={(e) => setUnitCostPrice(e.target.value)}
                   />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {purchaseUnit === 'kg' && 'O sistema calculará automaticamente o custo por grama.'}
+                    {purchaseUnit === 'l' && 'O sistema calculará automaticamente o custo por ml.'}
+                    {purchaseUnit === 'un' && 'Preço de custo de cada unidade individual.'}
+                  </span>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Valor Total Pago (R$)</label>
+                  <label className="form-label">Estoque Mínimo para Alerta</label>
                   <input
                     type="text"
-                    placeholder="Ex: 45.00"
+                    placeholder="Ex: 500 (em g/ml/un)"
                     className="form-input"
-                    value={initialPrice}
-                    onChange={(e) => setInitialPrice(e.target.value)}
+                    value={minStock}
+                    onChange={(e) => setMinStock(e.target.value)}
                   />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Alerta no Dashboard quando o estoque estiver baixo.
+                  </span>
                 </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Estoque Mínimo para Alerta (em g/ml/un)</label>
-                <input
-                  type="text"
-                  placeholder="Ex: 500"
-                  className="form-input"
-                  value={minStock}
-                  onChange={(e) => setMinStock(e.target.value)}
-                />
               </div>
 
               <div className="modal-actions">

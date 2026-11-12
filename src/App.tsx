@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AppProvider } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { PageId } from './components/layout/Navbar';
 import { DashboardPage } from './pages/Dashboard';
@@ -28,9 +29,11 @@ export function App() {
   };
 
   return (
-    <Layout activePage={activePage} onPageChange={setActivePage}>
-      {renderCurrentPage()}
-    </Layout>
+    <AppProvider>
+      <Layout activePage={activePage} onPageChange={setActivePage}>
+        {renderCurrentPage()}
+      </Layout>
+    </AppProvider>
   );
 }
 

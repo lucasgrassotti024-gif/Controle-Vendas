@@ -33,6 +33,7 @@ export interface BrownieRecipe {
   minStock: number;                // alerta de estoque baixo de prontos
   yieldUnits: number;              // rendimento da receita em unidades (ex: 16 brownies por fornada)
   laborCost?: number;              // custo de mão de obra direta por unidade (ex: R$ 1,00)
+  imageUrl?: string;               // foto oficial do brownie
   items: RecipeItem[];             // ingredientes que compõem 1 receita inteira
 }
 

@@ -151,17 +151,18 @@ export const initialBrownies: BrownieRecipe[] = [
     defaultSalePrice: 7.00,
     currentStock: 0,
     minStock: 8,
-    yieldUnits: 8, // Fornada rende 8 unidades
-    laborCost: 1.00, // Mão de obra por brownie
+    yieldUnits: 8,
+    laborCost: 1.00,
+    imageUrl: '/images/brownie-tradicional.png',
     items: [
-      { ingredientId: 'ing-choc-tradicional', quantity: 150 }, // 18.75g * 8
-      { ingredientId: 'ing-achocolatado', quantity: 100 },     // 12.5g * 8
-      { ingredientId: 'ing-ovos', quantity: 5 },               // 0.625 un * 8
-      { ingredientId: 'ing-oleo', quantity: 200 },             // 25ml * 8
-      { ingredientId: 'ing-farinha', quantity: 140 },          // 17.5g * 8
-      { ingredientId: 'ing-acucar', quantity: 350 },           // 43.75g * 8
-      { ingredientId: 'ing-embalagem', quantity: 8 },          // 1 un por brownie
-      { ingredientId: 'ing-adesivo', quantity: 8 },            // 1 un por brownie
+      { ingredientId: 'ing-choc-tradicional', quantity: 150 },
+      { ingredientId: 'ing-achocolatado', quantity: 100 },
+      { ingredientId: 'ing-ovos', quantity: 5 },
+      { ingredientId: 'ing-oleo', quantity: 200 },
+      { ingredientId: 'ing-farinha', quantity: 140 },
+      { ingredientId: 'ing-acucar', quantity: 350 },
+      { ingredientId: 'ing-embalagem', quantity: 8 },
+      { ingredientId: 'ing-adesivo', quantity: 8 },
     ]
   },
   {
@@ -173,14 +174,15 @@ export const initialBrownies: BrownieRecipe[] = [
     minStock: 8,
     yieldUnits: 8,
     laborCost: 1.00,
+    imageUrl: '/images/brownie-branco.png',
     items: [
-      { ingredientId: 'ing-choc-branco', quantity: 150 },      // 18.75g * 8
-      { ingredientId: 'ing-achocolatado', quantity: 100 },     // 12.5g * 8
-      { ingredientId: 'ing-ovos', quantity: 5 },               // 0.625 un * 8
-      { ingredientId: 'ing-oleo', quantity: 150 },             // 18.75ml * 8
-      { ingredientId: 'ing-farinha', quantity: 140 },          // 17.5g * 8
-      { ingredientId: 'ing-acucar', quantity: 350 },           // 43.75g * 8
-      { ingredientId: 'ing-leite-po', quantity: 80 },          // 10g por fatia (ajustável)
+      { ingredientId: 'ing-choc-branco', quantity: 150 },
+      { ingredientId: 'ing-achocolatado', quantity: 100 },
+      { ingredientId: 'ing-ovos', quantity: 5 },
+      { ingredientId: 'ing-oleo', quantity: 150 },
+      { ingredientId: 'ing-farinha', quantity: 140 },
+      { ingredientId: 'ing-acucar', quantity: 350 },
+      { ingredientId: 'ing-leite-po', quantity: 80 },
       { ingredientId: 'ing-embalagem', quantity: 8 },
       { ingredientId: 'ing-adesivo', quantity: 8 },
     ]
@@ -194,18 +196,16 @@ export const initialBrownies: BrownieRecipe[] = [
     minStock: 8,
     yieldUnits: 8,
     laborCost: 1.00,
+    imageUrl: '/images/brownie-ganache.jpg',
     items: [
-      // Massa base
       { ingredientId: 'ing-choc-tradicional', quantity: 150 },
       { ingredientId: 'ing-achocolatado', quantity: 100 },
       { ingredientId: 'ing-ovos', quantity: 5 },
       { ingredientId: 'ing-oleo', quantity: 200 },
       { ingredientId: 'ing-farinha', quantity: 140 },
       { ingredientId: 'ing-acucar', quantity: 350 },
-      // Cobertura Ganache
-      { ingredientId: 'ing-choc-ganache', quantity: 150 },    // 18.75g * 8
-      { ingredientId: 'ing-creme-leite', quantity: 70 },      // 8.75g * 8
-      // Embalagem e talheres
+      { ingredientId: 'ing-choc-ganache', quantity: 150 },
+      { ingredientId: 'ing-creme-leite', quantity: 70 },
       { ingredientId: 'ing-embalagem', quantity: 8 },
       { ingredientId: 'ing-adesivo', quantity: 8 },
       { ingredientId: 'ing-garfos', quantity: 8 },

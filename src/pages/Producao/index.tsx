@@ -9,7 +9,10 @@ import {
   Clock, 
   X,
   Trash2,
-  Edit2
+  Edit2,
+  Info,
+  Layers,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../services/calcService';
@@ -29,8 +32,10 @@ export const ProducaoPage: React.FC = () => {
     deleteBrownieRecipe
   } = useApp();
 
-  const [batchesToProduce, setBatchesToProduce] = useState<Record<string, number>>({});
   const [feedbackMessage, setFeedbackMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Modal de Detalhes da Ficha Técnica
+  const [selectedRecipeForDetails, setSelectedRecipeForDetails] = useState<BrownieRecipe | null>(null);
 
   // Modal de Nova/Editar Receita
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,28 +43,22 @@ export const ProducaoPage: React.FC = () => {
   const [newRecipeName, setNewRecipeName] = useState('');
   const [newRecipeDesc, setNewRecipeDesc] = useState('');
   const [newSalePrice, setNewSalePrice] = useState('8.00');
-  const [newYieldUnits, setNewYieldUnits] = useState('16');
+  const [newYieldUnits, setNewYieldUnits] = useState('8');
   const [newLaborCost, setNewLaborCost] = useState('1.00');
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
 
   // Campos temporários para adicionar ingrediente no modal
   const [tempIngId, setTempIngId] = useState(ingredients[0]?.id || '');
   const [tempQty, setTempQty] = useState('');
 
-  const handleBatchesChange = (recipeId: string, val: number) => {
-    setBatchesToProduce(prev => ({
-      ...prev,
-      [recipeId]: Math.max(1, val)
-    }));
-  };
-
   const handleProduce = (recipeId: string) => {
-    const batches = batchesToProduce[recipeId] || 1;
+    const batches = 1;
     const result = addProduction(recipeId, batches);
 
     if (result.success) {
       setFeedbackMessage({
-        text: `Produção registrada com sucesso! Insumos deduzidos e brownies adicionados ao estoque.`,
+        text: `Produção de 1 fornada registrada! Brownies prontos adicionados ao estoque.`,
         type: 'success'
       });
     } else {
@@ -71,14 +70,13 @@ export const ProducaoPage: React.FC = () => {
 
     setTimeout(() => {
       setFeedbackMessage(null);
-    }, 5000);
+    }, 4500);
   };
 
   const handleAddItemToRecipe = () => {
     const qty = parseFloat(tempQty.replace(',', '.')) || 0;
     if (!tempIngId || qty <= 0) return;
 
-    // Se já tiver na receita, atualiza a quantidade
     const existing = recipeItems.find(i => i.ingredientId === tempIngId);
     if (existing) {
       setRecipeItems(recipeItems.map(i => 
@@ -102,6 +100,7 @@ export const ProducaoPage: React.FC = () => {
     setNewSalePrice('8.00');
     setNewYieldUnits('8');
     setNewLaborCost('1.00');
+    setNewImageUrl('');
     setRecipeItems([]);
     setIsModalOpen(true);
   };
@@ -113,6 +112,7 @@ export const ProducaoPage: React.FC = () => {
     setNewSalePrice(recipe.defaultSalePrice.toFixed(2));
     setNewYieldUnits(recipe.yieldUnits.toString());
     setNewLaborCost((recipe.laborCost ?? 1.00).toFixed(2));
+    setNewImageUrl(recipe.imageUrl || '');
     setRecipeItems([...recipe.items]);
     setIsModalOpen(true);
   };
@@ -144,6 +144,7 @@ export const ProducaoPage: React.FC = () => {
         defaultSalePrice: price,
         yieldUnits: yieldCount,
         laborCost: labor,
+        imageUrl: newImageUrl.trim() || undefined,
         items: recipeItems,
       });
       setFeedbackMessage({
@@ -158,6 +159,7 @@ export const ProducaoPage: React.FC = () => {
         minStock: 8,
         yieldUnits: yieldCount,
         laborCost: labor,
+        imageUrl: newImageUrl.trim() || undefined,
         items: recipeItems,
       });
       setFeedbackMessage({
@@ -175,10 +177,10 @@ export const ProducaoPage: React.FC = () => {
       <div className="page-header">
         <h1 className="page-title">
           <ChefHat color="var(--color-accent)" />
-          Produção & Fichas Técnicas
+          Produção de Brownies
         </h1>
         <p className="page-description">
-          Gerencie o custo unitário por fatia com base no preço atual dos ingredientes e registre fornadas para abastecer o estoque de brownies prontos.
+          Acompanhe o catálogo de sabores, produza fornadas e consulte a ficha técnica de custos detalhada.
         </p>
       </div>
 
@@ -202,142 +204,86 @@ export const ProducaoPage: React.FC = () => {
 
       <div className="actions-bar">
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-          Receitas Cadastradas ({brownies.length})
+          Sabores Cadastrados ({brownies.length})
         </h2>
         <button className="btn-primary" onClick={handleOpenCreateRecipe}>
           <Plus size={18} />
-          Nova Receita / Sabor
+          Novo Sabor
         </button>
       </div>
 
-      {/* Grid de Fichas Técnicas */}
+      {/* Grid Clean de Cards dos Brownies */}
       <div className="production-recipes-grid">
         {brownies.map((recipe) => {
-          const unitCost = getBrownieUnitCost(recipe);
-          const batches = batchesToProduce[recipe.id] || 1;
-          const grossProfit = recipe.defaultSalePrice - unitCost;
-          const profitMargin = recipe.defaultSalePrice > 0 
-            ? ((grossProfit / recipe.defaultSalePrice) * 100).toFixed(0) 
-            : '0';
-
           return (
-            <div key={recipe.id} className="recipe-card">
-              <div>
-                <div className="recipe-header">
-                  <div>
-                    <h3 className="recipe-title">{recipe.name}</h3>
-                    <p className="recipe-desc">{recipe.description}</p>
+            <div key={recipe.id} className="recipe-card-clean">
+              {/* Foto do Brownie */}
+              <div className="recipe-image-wrapper">
+                {recipe.imageUrl ? (
+                  <img 
+                    src={recipe.imageUrl} 
+                    alt={recipe.name} 
+                    className="recipe-image" 
+                    onError={(e) => {
+                      // Fallback visual se a imagem falhar
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                    <ImageIcon size={40} />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="badge badge-tag">
-                      Rende {recipe.yieldUnits} un
-                    </span>
-                    <button
-                      onClick={() => handleOpenEditRecipe(recipe)}
-                      title="Editar Ficha Técnica"
-                      style={{ color: 'var(--color-accent)', padding: '2px' }}
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRecipe(recipe)}
-                      title="Excluir Receita"
-                      style={{ color: 'var(--color-danger)', padding: '2px' }}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="financial-pill-row">
-                  <div className="financial-pill">
-                    <span className="pill-label">Custo Unitário</span>
-                    <strong className="pill-value" style={{ color: 'var(--color-danger)' }}>
-                      {formatCurrency(unitCost)}
-                    </strong>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>por fatia</span>
-                  </div>
-
-                  <div className="financial-pill">
-                    <span className="pill-label">Preço Sugerido</span>
-                    <strong className="pill-value" style={{ color: 'var(--color-accent)' }}>
-                      {formatCurrency(recipe.defaultSalePrice)}
-                    </strong>
-                    <span style={{ fontSize: '0.7rem', color: '#2ed573' }}>
-                      Margem de {profitMargin}%
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    Composição da Receita (1 fornada):
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-accent)' }}>
-                    {recipe.items.length} insumos
-                  </span>
-                </div>
-
-                <div className="ingredients-mini-list">
-                  {recipe.items.map((item, idx) => {
-                    const ing = ingredientsMap.get(item.ingredientId);
-                    const costOfItem = ing ? item.quantity * ing.costPerBaseUnit : 0;
-                    return (
-                      <div key={idx} className="ingredient-mini-row">
-                        <span>{ing ? ing.name : 'Insumo'}</span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>
-                            {item.quantity} {ing?.baseUnit || ''}
-                          </span>
-                          <strong style={{ color: 'var(--text-main)' }}>
-                            {formatCurrency(costOfItem)}
-                          </strong>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {(recipe.laborCost ?? 0) > 0 && (
-                    <div className="ingredient-mini-row" style={{ color: 'var(--color-accent)' }}>
-                      <span>💼 Mão de Obra</span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>1 un/fat</span>
-                        <strong>{formatCurrency(recipe.laborCost || 0)}/un</strong>
-                      </div>
-                    </div>
-                  )}
+                )}
+                <div className="recipe-stock-badge">
+                  {recipe.currentStock} prontos
                 </div>
               </div>
 
-              {/* Caixa de Fabricação */}
-              <div className="production-action-box">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Prontos em Estoque: <strong style={{ color: 'var(--text-main)' }}>{recipe.currentStock} un</strong>
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--color-accent)' }}>
-                    Produzirá: {recipe.yieldUnits * batches} un
-                  </span>
+              {/* Corpo com apenas Nome e Preço */}
+              <div className="recipe-body-clean">
+                <div>
+                  <h3 className="recipe-name-clean">{recipe.name}</h3>
+                  <div className="recipe-price-clean">
+                    {formatCurrency(recipe.defaultSalePrice)}
+                  </div>
                 </div>
 
-                <div className="production-controls">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fornadas:</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="form-input"
-                      style={{ width: '64px', padding: '6px 8px', textAlign: 'center' }}
-                      value={batches}
-                      onChange={(e) => handleBatchesChange(recipe.id, parseInt(e.target.value, 10) || 1)}
-                    />
-                  </div>
+                {/* Ações: Produzir e Ver Ficha Técnica */}
+                <div className="recipe-actions-clean">
+                  <button
+                    className="btn-produce-clean"
+                    onClick={() => handleProduce(recipe.id)}
+                    title="Produzir 1 fornada"
+                  >
+                    <Flame size={15} />
+                    Produzir
+                  </button>
 
                   <button
-                    className="btn-produce"
-                    onClick={() => handleProduce(recipe.id)}
+                    className="btn-details-clean"
+                    onClick={() => setSelectedRecipeForDetails(recipe)}
+                    title="Ver detalhes da receita e custos"
                   >
-                    <Flame size={16} />
-                    Produzir
+                    <Info size={15} />
+                    Detalhes
+                  </button>
+
+                  <button
+                    className="btn-details-clean"
+                    onClick={() => handleOpenEditRecipe(recipe)}
+                    title="Editar Ficha"
+                    style={{ padding: '8px 10px' }}
+                  >
+                    <Edit2 size={15} />
+                  </button>
+
+                  <button
+                    className="btn-details-clean"
+                    onClick={() => handleDeleteRecipe(recipe)}
+                    title="Excluir Sabor"
+                    style={{ padding: '8px 10px', color: 'var(--color-danger)' }}
+                  >
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>
@@ -346,15 +292,111 @@ export const ProducaoPage: React.FC = () => {
         })}
       </div>
 
-      {/* Histórico de Produção */}
-      <div className="placeholder-card" style={{ marginTop: '32px' }}>
+      {/* Modal de Detalhes da Ficha Técnica */}
+      {selectedRecipeForDetails && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '540px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers size={22} color="var(--color-accent)" />
+                <h2 className="modal-title">{selectedRecipeForDetails.name}</h2>
+              </div>
+              <button onClick={() => setSelectedRecipeForDetails(null)}>
+                <X size={20} color="var(--text-muted)" />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              {selectedRecipeForDetails.description || 'Ficha técnica detalhada com custos unitários e proporções.'}
+            </p>
+
+            {(() => {
+              const unitCost = getBrownieUnitCost(selectedRecipeForDetails);
+              const grossProfit = selectedRecipeForDetails.defaultSalePrice - unitCost;
+              const profitMargin = selectedRecipeForDetails.defaultSalePrice > 0 
+                ? ((grossProfit / selectedRecipeForDetails.defaultSalePrice) * 100).toFixed(0) 
+                : '0';
+
+              return (
+                <div>
+                  <div className="details-modal-grid">
+                    <div className="details-pill">
+                      <span className="details-pill-label">Custo Unitário Total</span>
+                      <strong className="details-pill-val" style={{ color: 'var(--color-danger)' }}>
+                        {formatCurrency(unitCost)}
+                      </strong>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>por fatia</span>
+                    </div>
+
+                    <div className="details-pill">
+                      <span className="details-pill-label">Preço de Venda</span>
+                      <strong className="details-pill-val" style={{ color: 'var(--color-accent)' }}>
+                        {formatCurrency(selectedRecipeForDetails.defaultSalePrice)}
+                      </strong>
+                      <span style={{ fontSize: '0.72rem', color: '#2ed573' }}>
+                        Margem: {profitMargin}% (Lucro: {formatCurrency(grossProfit)})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                    <strong>Composição da Fornada ({selectedRecipeForDetails.yieldUnits} fatias):</strong>
+                    <span>{selectedRecipeForDetails.items.length} ingredientes</span>
+                  </div>
+
+                  <div className="details-items-table">
+                    {selectedRecipeForDetails.items.map((item, idx) => {
+                      const ing = ingredientsMap.get(item.ingredientId);
+                      const costOfItem = ing ? item.quantity * ing.costPerBaseUnit : 0;
+                      return (
+                        <div key={idx} className="details-item-row">
+                          <span>{ing ? ing.name : 'Insumo'}</span>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>
+                              {item.quantity} {ing?.baseUnit || ''}
+                            </span>
+                            <strong>{formatCurrency(costOfItem)}</strong>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {(selectedRecipeForDetails.laborCost ?? 0) > 0 && (
+                      <div className="details-item-row" style={{ color: 'var(--color-accent)' }}>
+                        <span>💼 Mão de Obra por fatia</span>
+                        <strong>{formatCurrency(selectedRecipeForDetails.laborCost || 0)}/un</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                    <button
+                      className="btn-primary"
+                      onClick={() => {
+                        handleProduce(selectedRecipeForDetails.id);
+                        setSelectedRecipeForDetails(null);
+                      }}
+                    >
+                      <Flame size={16} />
+                      Produzir Fornada Agora
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Histórico Recente de Produção */}
+      <div className="placeholder-card" style={{ marginTop: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <PackageCheck size={20} color="var(--color-accent)" />
-            Histórico Recente de Produção
+            Histórico de Fornadas
           </h2>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            {productions.length} fornada(s) registrada(s)
+            {productions.length} fornada(s)
           </span>
         </div>
 
@@ -363,11 +405,10 @@ export const ProducaoPage: React.FC = () => {
             <thead>
               <tr>
                 <th>Data</th>
-                <th>Brownie Produzido</th>
-                <th>Fornadas</th>
-                <th>Unidades Geradas</th>
+                <th>Brownie</th>
+                <th>Qtd Pronta</th>
                 <th>Custo Total</th>
-                <th>Custo por Fatia</th>
+                <th>Custo/Fatia</th>
               </tr>
             </thead>
             <tbody>
@@ -392,10 +433,9 @@ export const ProducaoPage: React.FC = () => {
                     <td>
                       <strong>{recipe ? recipe.name : 'Receita'}</strong>
                     </td>
-                    <td>{prod.batchesCount} fornada(s)</td>
                     <td>
                       <strong style={{ color: '#2ed573' }}>
-                        +{prod.unitsProduced} brownies
+                        +{prod.unitsProduced} un
                       </strong>
                     </td>
                     <td>{formatCurrency(prod.totalCost)}</td>
@@ -406,8 +446,8 @@ export const ProducaoPage: React.FC = () => {
 
               {productions.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                    Nenhuma fornada registrada ainda. Clique em "Produzir" no card da receita para gerar brownies prontos!
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    Nenhuma fornada registrada ainda. Clique em "Produzir" no card para fabricar brownies!
                   </td>
                 </tr>
               )}
@@ -443,10 +483,21 @@ export const ProducaoPage: React.FC = () => {
               </div>
 
               <div className="form-group">
+                <label className="form-label">URL da Foto (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: /images/brownie-tradicional.png ou link web"
+                  className="form-input"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Descrição</label>
                 <input
                   type="text"
-                  placeholder="Ex: Brownie com recheio cremoso de doce de leite artesanal..."
+                  placeholder="Ex: Brownie com recheio cremoso artesanal..."
                   className="form-input"
                   value={newRecipeDesc}
                   onChange={(e) => setNewRecipeDesc(e.target.value)}
@@ -455,7 +506,7 @@ export const ProducaoPage: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Preço de Venda Sugerido (R$)</label>
+                  <label className="form-label">Preço de Venda (R$)</label>
                   <input
                     type="text"
                     required
@@ -466,7 +517,7 @@ export const ProducaoPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Rendimento (Fatias por Fornada)</label>
+                  <label className="form-label">Rendimento (Fatias)</label>
                   <input
                     type="number"
                     required
@@ -478,7 +529,7 @@ export const ProducaoPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Mão de Obra por Fatia (R$)</label>
+                  <label className="form-label">Mão de Obra/Fatia (R$)</label>
                   <input
                     type="text"
                     required

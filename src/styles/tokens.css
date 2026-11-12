@@ -1,0 +1,61 @@
+:root {
+  /* Cores Temáticas de Confeitaria & Chocolate Artesanal */
+  --color-primary: #5c2c16;        /* Chocolate Intenso */
+  --color-primary-light: #7b3d22;  /* Cacau Suave */
+  --color-primary-dark: #3a1a0d;   /* Chocolate Amargo */
+  --color-accent: #e09f3e;         /* Caramelo / Dourado */
+  --color-accent-light: #fef4e8;   /* Creme Baunilha */
+
+  /* Cores de Feedback / Status */
+  --color-success: #1b8755;
+  --color-success-bg: #eafaf1;
+  --color-warning: #c27803;
+  --color-warning-bg: #fff8eb;
+  --color-danger: #c92a2a;
+  --color-danger-bg: #ffe8e8;
+  --color-info: #0b7285;
+  --color-info-bg: #e6fcf5;
+
+  /* Superfícies & Fundo (Dark / Warm Elegant Theme) */
+  --bg-app: #12100e;               /* Fundo escuro aveludado */
+  --bg-surface: #1e1a17;           /* Superfície de cards */
+  --bg-surface-elevated: #28231f;  /* Cards em hover/modais */
+  --bg-surface-subtle: #2d2621;
+
+  /* Bordas & Divisores */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: var(--color-accent);
+
+  /* Tipografia & Contrastes */
+  --text-main: #f5ede6;            /* Texto principal suave */
+  --text-muted: #b5a498;           /* Texto secundário */
+  --text-dim: #786a60;             /* Texto terciário */
+  --text-inverse: #12100e;
+
+  /* Fontes */
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Espaçamentos */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Raios de Borda */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.45);
+
+  /* Transições */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}

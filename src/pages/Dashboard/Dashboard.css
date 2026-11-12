@@ -1,0 +1,47 @@
+.metrics-grid-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.metric-card-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.metric-card-preview:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.metric-icon-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+}
+
+.metric-data-preview {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label-preview {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.metric-value-preview {
+  font-size: 1.4rem;
+  color: var(--text-main);
+  font-family: var(--font-heading);
+}

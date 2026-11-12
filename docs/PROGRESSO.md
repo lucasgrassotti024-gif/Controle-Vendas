@@ -5,7 +5,7 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ---
 
 ## Estado Atual
-- **Fase Atual:** FASE 7 — Testes Integrados Ponta a Ponta e Validação Geral
+- **Fase Atual:** FASE 8 — Preparação para Publicação e Entrega Final
 - **Status:** CONCLUÍDA
 - **Última Atualização:** 2026-11-12
 
@@ -44,13 +44,13 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ### FASE 7 — Testes Integrados Ponta a Ponta e Validação Geral
 - **Status:** CONCLUÍDA
 - **Data de Conclusão:** 2026-11-12
+
+### FASE 8 — Preparação para Publicação e Entrega Final
+- **Status:** CONCLUÍDA
+- **Data de Conclusão:** 2026-11-12
 - **Implementações:**
-  - Script de testes automatizados de integração das regras de negócio (`src/test-integration.ts`).
-  - Validação da conversão de kg -> g e L -> ml.
-  - Validação da precisão de recálculo do custo por grama de insumo.
-  - Validação da ficha técnica com cálculo de custo por unidade de brownie.
-  - Validação dos 4 ciclos financeiros (Venda à vista, Venda fiado, Saída de compras, Baixa de fiado).
-- **Testes & Validação:**
-  - Bateria de testes executada via `tsx` com 100% de sucesso.
-  - `npm run build` executado com 0 erros de compilação.
-- **Próximo Passo:** Planejamento e aprovação da FASE 8 (Preparação para Publicação e Entrega Final).
+  - Manual ilustrado de uso completo gravado no `README.md`.
+  - Instruções de deploy gratuitas em produção (Vercel / Netlify).
+  - Roadmap `docs/PLANO.md` 100% concluído.
+  - Repositório Git com histórico de commits atômicos de todas as 8 fases.
+- **Projeto finalizado com sucesso!**

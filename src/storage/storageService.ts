@@ -1,4 +1,5 @@
 import { Ingredient, BrownieRecipe, Purchase, ProductionBatch, Sale } from '../types';
+import { initialIngredients, initialBrownies } from './initialData';
 
 const KEYS = {
   INGREDIENTS: '@brownie_gestao:ingredients',
@@ -14,12 +15,12 @@ export const storageService = {
     try {
       const data = localStorage.getItem(KEYS.INGREDIENTS);
       if (!data) {
-        localStorage.setItem(KEYS.INGREDIENTS, JSON.stringify([]));
-        return [];
+        localStorage.setItem(KEYS.INGREDIENTS, JSON.stringify(initialIngredients));
+        return initialIngredients;
       }
       return JSON.parse(data);
     } catch {
-      return [];
+      return initialIngredients;
     }
   },
   saveIngredients: (ingredients: Ingredient[]): void => {
@@ -31,12 +32,12 @@ export const storageService = {
     try {
       const data = localStorage.getItem(KEYS.BROWNIES);
       if (!data) {
-        localStorage.setItem(KEYS.BROWNIES, JSON.stringify([]));
-        return [];
+        localStorage.setItem(KEYS.BROWNIES, JSON.stringify(initialBrownies));
+        return initialBrownies;
       }
       return JSON.parse(data);
     } catch {
-      return [];
+      return initialBrownies;
     }
   },
   saveBrownies: (brownies: BrownieRecipe[]): void => {
@@ -82,10 +83,10 @@ export const storageService = {
     localStorage.setItem(KEYS.SALES, JSON.stringify(sales));
   },
 
-  // Limpar e deixar sistema 100% zerado
+  // Limpar e restaurar dados de fábrica da Veneza Brownies
   resetToFactoryDefaults: (): void => {
-    localStorage.setItem(KEYS.INGREDIENTS, JSON.stringify([]));
-    localStorage.setItem(KEYS.BROWNIES, JSON.stringify([]));
+    localStorage.setItem(KEYS.INGREDIENTS, JSON.stringify(initialIngredients));
+    localStorage.setItem(KEYS.BROWNIES, JSON.stringify(initialBrownies));
     localStorage.setItem(KEYS.PURCHASES, JSON.stringify([]));
     localStorage.setItem(KEYS.PRODUCTIONS, JSON.stringify([]));
     localStorage.setItem(KEYS.SALES, JSON.stringify([]));

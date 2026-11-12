@@ -7,6 +7,7 @@ import {
   Sale, 
   DashboardMetrics 
 } from '../types';
+import { initialIngredients, initialBrownies } from '../storage/initialData';
 import { storageService } from '../storage/storageService';
 import { 
   convertToBaseUnit, 
@@ -49,17 +50,17 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
     const data = storageService.getIngredients();
-    // Se ainda for a semente antiga de exemplo, zera tudo
-    if (data.some(i => i.id === 'ing-1')) {
-      storageService.resetToFactoryDefaults();
-      return [];
+    if (data.length === 0) {
+      storageService.saveIngredients(initialIngredients);
+      return initialIngredients;
     }
     return data;
   });
   const [brownies, setBrownies] = useState<BrownieRecipe[]>(() => {
     const data = storageService.getBrownies();
-    if (data.some(b => b.id === 'brownie-1')) {
-      return [];
+    if (data.length === 0) {
+      storageService.saveBrownies(initialBrownies);
+      return initialBrownies;
     }
     return data;
   });

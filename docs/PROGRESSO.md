@@ -5,7 +5,7 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ---
 
 ## Estado Atual
-- **Fase Atual:** FASE 6 — Dashboard e Indicadores Financeiros Consolidados
+- **Fase Atual:** FASE 7 — Testes Integrados Ponta a Ponta e Validação Geral
 - **Status:** CONCLUÍDA
 - **Última Atualização:** 2026-11-12
 
@@ -40,15 +40,17 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ### FASE 6 — Dashboard e Indicadores Financeiros Consolidados
 - **Status:** CONCLUÍDA
 - **Data de Conclusão:** 2026-11-12
+
+### FASE 7 — Testes Integrados Ponta a Ponta e Validação Geral
+- **Status:** CONCLUÍDA
+- **Data de Conclusão:** 2026-11-12
 - **Implementações:**
-  - Painel com os 4 KPIs Financeiros Centrais conectados e dinâmicos:
-    - **Faturamento Realizado** (vendas pagas e quitadas).
-    - **Total em Compras** (despesas com matérias-primas e embalagens).
-    - **Lucro Líquido Real** (Faturamento - Compras).
-    - **Fiados a Receber** (total pendente na rua e contagem de devedores).
-  - Painel de Pronta Entrega com barras visuais de progresso de estoque por sabor.
-  - Painel de Valor Imobilizado em Insumos (R$) e lista de alerta de insumos com estoque crítico.
-  - Recurso de Restaurar Dados de Fábrica para testes limpos.
+  - Script de testes automatizados de integração das regras de negócio (`src/test-integration.ts`).
+  - Validação da conversão de kg -> g e L -> ml.
+  - Validação da precisão de recálculo do custo por grama de insumo.
+  - Validação da ficha técnica com cálculo de custo por unidade de brownie.
+  - Validação dos 4 ciclos financeiros (Venda à vista, Venda fiado, Saída de compras, Baixa de fiado).
 - **Testes & Validação:**
+  - Bateria de testes executada via `tsx` com 100% de sucesso.
   - `npm run build` executado com 0 erros de compilação.
-- **Próximo Passo:** Planejamento e aprovação da FASE 7 (Testes Integrados Ponta a Ponta e Validação Geral).
+- **Próximo Passo:** Planejamento e aprovação da FASE 8 (Preparação para Publicação e Entrega Final).

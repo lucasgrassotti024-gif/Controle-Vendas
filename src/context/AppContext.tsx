@@ -47,8 +47,22 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(() => storageService.getIngredients());
-  const [brownies, setBrownies] = useState<BrownieRecipe[]>(() => storageService.getBrownies());
+  const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
+    const data = storageService.getIngredients();
+    // Se ainda for a semente antiga de exemplo, zera tudo
+    if (data.some(i => i.id === 'ing-1')) {
+      storageService.resetToFactoryDefaults();
+      return [];
+    }
+    return data;
+  });
+  const [brownies, setBrownies] = useState<BrownieRecipe[]>(() => {
+    const data = storageService.getBrownies();
+    if (data.some(b => b.id === 'brownie-1')) {
+      return [];
+    }
+    return data;
+  });
   const [purchases, setPurchases] = useState<Purchase[]>(() => storageService.getPurchases());
   const [productions, setProductions] = useState<ProductionBatch[]>(() => storageService.getProductions());
   const [sales, setSales] = useState<Sale[]>(() => storageService.getSales());

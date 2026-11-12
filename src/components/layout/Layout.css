@@ -53,3 +53,27 @@
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-sm);
 }
+
+/* RESPONSIVIDADE MOBILE DO LAYOUT GERAL */
+@media (max-width: 768px) {
+  .layout-content {
+    padding: 16px 12px 90px 12px; /* 90px de padding inferior para não cobrir pela Bottom Bar */
+  }
+
+  .page-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+  }
+
+  .page-description {
+    font-size: 0.82rem;
+  }
+
+  .placeholder-card {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+}

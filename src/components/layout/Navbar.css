@@ -1,3 +1,4 @@
+/* Navbar Superior (Desktop) e Bottom Nav (Mobile) */
 .header-container {
   display: flex;
   align-items: center;
@@ -47,6 +48,7 @@
   letter-spacing: 0.05em;
 }
 
+/* Menu no Desktop */
 .header-nav {
   display: flex;
   align-items: center;
@@ -81,18 +83,64 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ADAPTAÇÃO MOBILE (Estilo App Nativo com Bottom Navigation Bar) */
 @media (max-width: 768px) {
   .header-container {
-    flex-direction: column;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
+    padding: 12px 16px;
+    justify-content: center;
   }
+
+  .brand-title {
+    font-size: 1.05rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.68rem;
+  }
+
+  /* Transforma a navegação em barra fixa no rodapé da tela */
   .header-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    overflow-x: auto;
-    justify-content: space-between;
+    z-index: 999;
+    background-color: #1a1613;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: space-around;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
   }
+
+  .nav-button {
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 4px;
+    font-size: 0.68rem;
+    flex: 1;
+    border-radius: var(--radius-sm);
+    justify-content: center;
+    text-align: center;
+    background: transparent;
+  }
+
   .nav-button span {
-    font-size: 0.8rem;
+    font-size: 0.68rem;
+    letter-spacing: -0.01em;
+  }
+
+  .nav-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-button-active {
+    background-color: rgba(224, 159, 62, 0.12);
+    color: var(--color-accent);
+    font-weight: 700;
   }
 }

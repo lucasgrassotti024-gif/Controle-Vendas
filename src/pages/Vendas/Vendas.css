@@ -6,12 +6,6 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-@media (max-width: 900px) {
-  .sales-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 .sale-form-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -31,15 +25,16 @@
   background-color: var(--bg-app);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 10px var(--spacing-md);
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   justify-content: center;
   transition: all var(--transition-fast);
+  min-height: 44px;
 }
 
 .payment-btn:hover {
@@ -97,17 +92,37 @@
   background-color: rgba(27, 135, 85, 0.15);
   border: 1px solid var(--color-success);
   color: #2ed573;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: var(--radius-md);
   font-size: 0.8rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 34px;
   transition: all var(--transition-fast);
 }
 
 .btn-settle:hover {
   background-color: var(--color-success);
   color: #fff;
+}
+
+/* RESPONSIVIDADE MOBILE DE VENDAS */
+@media (max-width: 900px) {
+  .sales-layout {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .sale-form-card, .fiados-pending-section {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .payment-options-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }

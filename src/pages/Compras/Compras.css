@@ -5,12 +5,6 @@
   align-items: flex-start;
 }
 
-@media (max-width: 900px) {
-  .purchases-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 .purchase-form-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -62,6 +56,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
 }
 
 .history-total-badge {
@@ -71,4 +67,27 @@
   border-radius: var(--radius-full);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* RESPONSIVIDADE MOBILE DE COMPRAS */
+@media (max-width: 900px) {
+  .purchases-layout {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .purchase-form-card, .purchases-history-card {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+
+  .unit-cost-preview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .unit-cost-preview strong {
+    font-size: 1.3rem;
+  }
 }

@@ -5,7 +5,7 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ---
 
 ## Estado Atual
-- **Fase Atual:** FASE 9 — CRUD Completo (Criar, Editar e Excluir) em Todas as Entidades
+- **Fase Atual:** FASE 10 — Otimização Mobile-First e Responsividade Completa
 - **Status:** CONCLUÍDA
 - **Última Atualização:** 2026-11-12
 
@@ -13,24 +13,19 @@ Documento de controle contínuo do andamento do desenvolvimento.
 
 ## Histórico de Fases
 
-### FASE 0 a FASE 8 — Ciclo Base e Publicação
+### FASE 0 a FASE 9 — Ciclo Base, Publicação e CRUD Completo
 - **Status:** CONCLUÍDAS
 - **Data de Conclusão:** 2026-11-12
 
-### FASE 9 — CRUD Completo (Criar, Editar e Excluir) em Todas as Entidades
+### FASE 10 — Otimização Mobile-First e Responsividade Completa
 - **Status:** CONCLUÍDA
 - **Data de Conclusão:** 2026-11-12
 - **Implementações:**
-  - **Insumos / Ingredientes & Embalagens:**
-    - Botão de Editar com preenchimento automático no modal.
-    - Botão de Excluir com validação de dependência (impede exclusão se o ingrediente fizer parte de uma receita).
-  - **Brownies / Receitas:**
-    - Botão de Editar Ficha Técnica permitindo mudar nome, rendimento, preço sugerido e proporções de ingredientes.
-    - Botão de Excluir sabor do catálogo com confirmação.
-  - **Compras:**
-    - Botão de Excluir compra com **estorno automático**: desconta a quantidade do insumo que havia entrado no estoque e remove a saída do caixa.
-  - **Vendas:**
-    - Botão de Excluir venda (tanto à vista quanto fiado) com **devolução de estoque**: adiciona as fatias vendidas de volta aos brownies prontos e ajusta o faturamento/fiado a receber.
+  - **Bottom Navigation Bar nativa para celular:** Em telas de smartphone (< 768px), o menu superior converte-se em barra fixa inferior no rodapé com ícones e rótulos ao alcance fácil do polegar.
+  - **Layout com safe-area:** Padding inferior de 90px para garantir que nenhum botão ou tabela fique escondido atrás da barra de navegação no celular.
+  - **Tabelas responsivas:** Rolagem horizontal suave com `-webkit-overflow-scrolling: touch` para manter dados organizados sem quebrar textos.
+  - **Modais responsivos:** Redimensionamento para 95% da tela com rolagem vertical interna, ideal para digitação no teclado virtual.
+  - **Servidor Vite configurado com `host: true`:** Permite abrir diretamente no navegador do smartphone na mesma rede Wi-Fi através do IP local (`http://10.0.0.230:3000`).
 - **Testes & Validação:**
   - `npm run build` executado com 0 erros de compilação.
 - **Implementações:**

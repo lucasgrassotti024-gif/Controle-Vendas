@@ -5,7 +5,7 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ---
 
 ## Estado Atual
-- **Fase Atual:** FASE 4 — Módulo de Produção e Ficha Técnica
+- **Fase Atual:** FASE 5 — Módulo de Vendas e Gestão de Fiado
 - **Status:** CONCLUÍDA
 - **Última Atualização:** 2026-11-12
 
@@ -32,17 +32,19 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ### FASE 4 — Módulo de Produção e Ficha Técnica
 - **Status:** CONCLUÍDA
 - **Data de Conclusão:** 2026-11-12
+
+### FASE 5 — Módulo de Vendas e Gestão de Fiado
+- **Status:** CONCLUÍDA
+- **Data de Conclusão:** 2026-11-12
 - **Implementações:**
-  - Cards de Ficha Técnica por Sabor exibindo:
-    - Preço sugerido, margem de lucro calculada e rendimento.
-    - Custo Unitário exato recalculado na hora com base no preço atual dos insumos.
-    - Lista discriminada de ingredientes e embalagens com custo proporcional.
-  - Ação de Fabricação (*Produzir fornadas*):
-    - Validação prévia de estoque (impede produção se faltar ingrediente e avisa qual).
-    - Baixa automática no estoque de matéria-prima.
-    - Acréscimo das fatias produzidas no estoque de brownies prontos para venda.
-  - Modal para criar novos sabores com composição dinâmica de insumos.
-  - Tabela com histórico de produções e fornadas realizadas.
+  - Formulário ágil de Venda com seleção de sabor e quantidade.
+  - Validação estrita de estoque de brownies prontos (impede venda sem saldo e avisa o total disponível).
+  - Seletor de pagamento interativo: Dinheiro, Pix, Cartão ou Fiado.
+  - Tratamento inteligente de Fiado:
+    - Campo obrigatório de Nome do Cliente / Devedor.
+    - Seção visual destacada de Contas a Receber (Fiados Pendentes).
+    - Botão funcional "Dar Baixa" que liquida o fiado com data de quitação e transfere o valor para o faturamento realizado.
+  - Tabela com histórico geral de vendas com filtros visuais por status (*Pago* / *Pendente*).
 - **Testes & Validação:**
   - `npm run build` executado com 0 erros de compilação.
-- **Próximo Passo:** Planejamento e aprovação da FASE 5 (Módulo de Vendas e Gestão de Fiado).
+- **Próximo Passo:** Planejamento e aprovação da FASE 6 (Dashboard e Indicadores Financeiros Consolidados).

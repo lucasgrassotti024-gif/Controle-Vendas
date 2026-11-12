@@ -504,7 +504,7 @@ export const ProducaoPage: React.FC = () => {
                 />
               </div>
 
-              <div className="form-row">
+              <div className="form-row form-row-three">
                 <div className="form-group">
                   <label className="form-label">Preço de Venda (R$)</label>
                   <input
@@ -529,56 +529,67 @@ export const ProducaoPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Mão de Obra/Fatia (R$)</label>
+                  <label className="form-label">
+                    Mão de Obra/Fatia (R$)
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: 1.00"
+                    placeholder="1.00"
                     className="form-input"
                     value={newLaborCost}
                     onChange={(e) => setNewLaborCost(e.target.value)}
                   />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--color-accent)', marginTop: '2px' }}>
+                    +R$ 1,00/un exclusivo do brownie
+                  </span>
                 </div>
               </div>
 
-              {/* Seletor dinâmico de Insumos da Receita */}
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Ingredientes & Embalagens consumidos na fornada:</span>
-                  <span style={{ color: 'var(--color-accent)' }}>{recipeItems.length} adicionados</span>
+              {/* Seletor dinâmico de Insumos da Receita - sem estourar laterais */}
+              <div className="form-group" style={{ marginTop: 'var(--spacing-sm)' }}>
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Ingredientes & Embalagens consumidos:</span>
+                  <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>{recipeItems.length} adicionado(s)</span>
                 </label>
 
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <select
-                    className="form-select"
-                    style={{ flex: 2 }}
-                    value={tempIngId}
-                    onChange={(e) => setTempIngId(e.target.value)}
-                  >
-                    {ingredients.map(ing => (
-                      <option key={ing.id} value={ing.id}>
-                        {ing.name} (unidade: {ing.baseUnit})
-                      </option>
-                    ))}
-                  </select>
+                <div className="add-ingredient-box">
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label-sub">Insumo do Estoque:</label>
+                    <select
+                      className="form-select"
+                      value={tempIngId}
+                      onChange={(e) => setTempIngId(e.target.value)}
+                    >
+                      {ingredients.map(ing => (
+                        <option key={ing.id} value={ing.id}>
+                          {ing.name} ({ing.baseUnit})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <input
-                    type="text"
-                    placeholder="Qtd (g/ml/un)"
-                    className="form-input"
-                    style={{ flex: 1 }}
-                    value={tempQty}
-                    onChange={(e) => setTempQty(e.target.value)}
-                  />
+                  <div className="add-ingredient-action-row">
+                    <div style={{ flex: 1 }}>
+                      <label className="form-label-sub">Quantidade consumida:</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 150"
+                        className="form-input"
+                        value={tempQty}
+                        onChange={(e) => setTempQty(e.target.value)}
+                      />
+                    </div>
 
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    style={{ padding: '0 16px' }}
-                    onClick={handleAddItemToRecipe}
-                  >
-                    <Plus size={16} />
-                  </button>
+                    <button
+                      type="button"
+                      className="btn-primary btn-add-ingredient"
+                      onClick={handleAddItemToRecipe}
+                    >
+                      <Plus size={16} />
+                      Adicionar
+                    </button>
+                  </div>
                 </div>
 
                 {/* Lista dos insumos já adicionados na receita */}

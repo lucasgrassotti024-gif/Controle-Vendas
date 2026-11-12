@@ -1,29 +1,351 @@
-import React from 'react';
-import { Boxes, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Boxes, 
+  Plus, 
+  Search, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Package, 
+  X,
+  Layers
+} from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { formatCurrency, formatStock, convertToBaseUnit } from '../../services/calcService';
+import { PurchaseUnit, BaseUnit, IngredientCategory } from '../../types';
+import './Estoque.css';
 
 export const EstoquePage: React.FC = () => {
+  const { ingredients, brownies, addIngredient } = useApp();
+  const [activeTab, setActiveTab] = useState<'insumos' | 'prontos'>('insumos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Formulário de novo insumo
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState<IngredientCategory>('ingrediente');
+  const [purchaseUnit, setPurchaseUnit] = useState<PurchaseUnit>('kg');
+  const [initialQuantity, setInitialQuantity] = useState('');
+  const [initialPrice, setInitialPrice] = useState('');
+  const [minStock, setMinStock] = useState('500');
+
+  const filteredIngredients = ingredients.filter(ing => 
+    ing.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredBrownies = brownies.filter(b =>
+    b.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateIngredient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    // Determinar unidade base
+    let baseUnit: BaseUnit = 'un';
+    if (purchaseUnit === 'kg' || purchaseUnit === 'g') baseUnit = 'g';
+    if (purchaseUnit === 'l' || purchaseUnit === 'ml') baseUnit = 'ml';
+
+    const qty = parseFloat(initialQuantity.replace(',', '.')) || 0;
+    const price = parseFloat(initialPrice.replace(',', '.')) || 0;
+    const min = parseFloat(minStock.replace(',', '.')) || 0;
+
+    const baseStock = convertToBaseUnit(qty, purchaseUnit, baseUnit);
+    const costPerBase = baseStock > 0 ? (price / baseStock) : 0;
+
+    addIngredient({
+      name: name.trim(),
+      category,
+      purchaseUnit,
+      baseUnit,
+      currentStock: baseStock,
+      minStock: min,
+      costPerBaseUnit: costPerBase,
+    });
+
+    setIsModalOpen(false);
+    setName('');
+    setInitialQuantity('');
+    setInitialPrice('');
+    setMinStock('500');
+  };
+
   return (
     <div>
       <div className="page-header">
         <h1 className="page-title">
           <Boxes color="var(--color-accent)" />
-          Estoque (Insumos & Brownies Prontos)
+          Controle de Estoque
         </h1>
         <p className="page-description">
-          Acompanhe o saldo dos ingredientes (gramas, ml, unidades) e a quantidade de brownies prontos para venda.
+          Gerencie o saldo de matérias-primas/embalagens e acompanhe a quantidade de brownies prontos para entrega.
         </p>
       </div>
 
-      <div className="placeholder-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-accent)', marginBottom: '12px' }}>
-          <AlertCircle size={20} />
-          <strong>Módulo de Estoque Planejado</strong>
-        </div>
-        <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
-          Aqui você cadastrará seus insumos (chocolate, farinha, manteiga, ovos, embalagens) definindo o preço do quilo, litro ou unidade. 
-          Você também verá o saldo de brownies prontos aguardando venda e alertas quando algum ingrediente estiver acabando.
-        </p>
+      {/* Abas */}
+      <div className="stock-tabs">
+        <button
+          className={`stock-tab-btn ${activeTab === 'insumos' ? 'active' : ''}`}
+          onClick={() => setActiveTab('insumos')}
+        >
+          <Layers size={18} />
+          Insumos & Embalagens ({ingredients.length})
+        </button>
+        <button
+          className={`stock-tab-btn ${activeTab === 'prontos' ? 'active' : ''}`}
+          onClick={() => setActiveTab('prontos')}
+        >
+          <Package size={18} />
+          Brownies Prontos para Venda ({brownies.length})
+        </button>
       </div>
+
+      {/* Barra de Ações */}
+      <div className="actions-bar">
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px' }} />
+          <input
+            type="text"
+            className="search-input"
+            style={{ paddingLeft: '36px' }}
+            placeholder={`Buscar em ${activeTab === 'insumos' ? 'insumos' : 'brownies'}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {activeTab === 'insumos' && (
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+            <Plus size={18} />
+            Novo Insumo / Embalagem
+          </button>
+        )}
+      </div>
+
+      {/* Conteúdo da Aba 1: Insumos */}
+      {activeTab === 'insumos' && (
+        <div className="table-container">
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>Nome do Insumo</th>
+                <th>Categoria</th>
+                <th>Estoque Atual</th>
+                <th>Custo Médio Base</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredIngredients.map((ing) => {
+                const isLow = ing.currentStock <= ing.minStock;
+                return (
+                  <tr key={ing.id}>
+                    <td>
+                      <strong>{ing.name}</strong>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Comprado em: {ing.purchaseUnit.toUpperCase()} | Consumo: {ing.baseUnit}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge-tag">
+                        {ing.category === 'embalagem' ? 'Embalagem' : 'Ingrediente'}
+                      </span>
+                    </td>
+                    <td>
+                      <strong style={{ fontSize: '1rem' }}>
+                        {formatStock(ing.currentStock, ing.baseUnit)}
+                      </strong>
+                    </td>
+                    <td>
+                      <span>{formatCurrency(ing.costPerBaseUnit)}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        /{ing.baseUnit}
+                      </span>
+                    </td>
+                    <td>
+                      {isLow ? (
+                        <span className="badge badge-warning">
+                          <AlertTriangle size={12} /> Estoque Baixo (&lt; {ing.minStock})
+                        </span>
+                      ) : (
+                        <span className="badge badge-success">
+                          <CheckCircle2 size={12} /> Normal
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredIngredients.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                    Nenhum insumo encontrado.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Conteúdo da Aba 2: Brownies Prontos */}
+      {activeTab === 'prontos' && (
+        <div className="table-container">
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>Sabor do Brownie</th>
+                <th>Preço de Venda</th>
+                <th>Prontos em Estoque</th>
+                <th>Rendimento por Fornada</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBrownies.map((b) => {
+                const isLow = b.currentStock <= b.minStock;
+                return (
+                  <tr key={b.id}>
+                    <td>
+                      <strong>{b.name}</strong>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {b.description}
+                      </div>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--color-accent)' }}>
+                        {formatCurrency(b.defaultSalePrice)}
+                      </strong>
+                    </td>
+                    <td>
+                      <strong style={{ fontSize: '1.1rem' }}>
+                        {b.currentStock} unidades
+                      </strong>
+                    </td>
+                    <td>{b.yieldUnits} un / fornada</td>
+                    <td>
+                      {isLow ? (
+                        <span className="badge badge-warning">
+                          <AlertTriangle size={12} /> Repor Produção (&lt; {b.minStock})
+                        </span>
+                      ) : (
+                        <span className="badge badge-success">
+                          <CheckCircle2 size={12} /> Pronta Entrega
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Insumo */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="modal-title">Cadastrar Novo Insumo</h2>
+              <button onClick={() => setIsModalOpen(false)}>
+                <X size={20} color="var(--text-muted)" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateIngredient}>
+              <div className="form-group">
+                <label className="form-label">Nome do Insumo</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Leite Ninho, Forminha Kraft..."
+                  className="form-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Categoria</label>
+                  <select
+                    className="form-select"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as IngredientCategory)}
+                  >
+                    <option value="ingrediente">Ingrediente</option>
+                    <option value="embalagem">Embalagem / Descartável</option>
+                    <option value="outro">Outro Insumo</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Unidade de Compra</label>
+                  <select
+                    className="form-select"
+                    value={purchaseUnit}
+                    onChange={(e) => setPurchaseUnit(e.target.value as PurchaseUnit)}
+                  >
+                    <option value="kg">Quilo (kg)</option>
+                    <option value="g">Grama (g)</option>
+                    <option value="l">Litro (l)</option>
+                    <option value="ml">Mililitro (ml)</option>
+                    <option value="un">Unidade (un)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Qtd Inicial Comprada</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 2 ou 1.5"
+                    className="form-input"
+                    value={initialQuantity}
+                    onChange={(e) => setInitialQuantity(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Valor Total Pago (R$)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 45.00"
+                    className="form-input"
+                    value={initialPrice}
+                    onChange={(e) => setInitialPrice(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Estoque Mínimo para Alerta (em g/ml/un)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 500"
+                  className="form-input"
+                  value={minStock}
+                  onChange={(e) => setMinStock(e.target.value)}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-primary">
+                  Cadastrar Insumo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

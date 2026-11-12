@@ -7,18 +7,22 @@ import {
   CheckCircle2, 
   Package, 
   X,
-  Layers
+  Layers,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency, formatStock, convertToBaseUnit } from '../../services/calcService';
-import { PurchaseUnit, BaseUnit, IngredientCategory } from '../../types';
+import { PurchaseUnit, BaseUnit, IngredientCategory, Ingredient } from '../../types';
 import './Estoque.css';
 
 export const EstoquePage: React.FC = () => {
-  const { ingredients, brownies, addIngredient } = useApp();
+  const { ingredients, brownies, addIngredient, updateIngredient, deleteIngredient } = useApp();
   const [activeTab, setActiveTab] = useState<'insumos' | 'prontos'>('insumos');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+  const [feedback, setFeedback] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Formulário de novo insumo
   const [name, setName] = useState('');
@@ -36,37 +40,90 @@ export const EstoquePage: React.FC = () => {
     b.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateIngredient = (e: React.FormEvent) => {
+  const handleOpenCreate = () => {
+    setEditingIngredient(null);
+    setName('');
+    setCategory('ingrediente');
+    setPurchaseUnit('kg');
+    setInitialQuantity('');
+    setInitialPrice('');
+    setMinStock('500');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (ing: Ingredient) => {
+    setEditingIngredient(ing);
+    setName(ing.name);
+    setCategory(ing.category);
+    setPurchaseUnit(ing.purchaseUnit);
+    setInitialQuantity(ing.currentStock.toString());
+    setInitialPrice((ing.currentStock * ing.costPerBaseUnit).toFixed(2));
+    setMinStock(ing.minStock.toString());
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (ing: Ingredient) => {
+    if (window.confirm(`Tem certeza de que deseja excluir o insumo "${ing.name}"?`)) {
+      const result = deleteIngredient(ing.id);
+      if (result.success) {
+        setFeedback({ text: `Insumo "${ing.name}" excluído com sucesso.`, type: 'success' });
+      } else {
+        setFeedback({ text: result.message || 'Erro ao excluir.', type: 'error' });
+      }
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  const handleSaveIngredient = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    // Determinar unidade base
     let baseUnit: BaseUnit = 'un';
     if (purchaseUnit === 'kg' || purchaseUnit === 'g') baseUnit = 'g';
     if (purchaseUnit === 'l' || purchaseUnit === 'ml') baseUnit = 'ml';
 
-    const qty = parseFloat(initialQuantity.replace(',', '.')) || 0;
-    const price = parseFloat(initialPrice.replace(',', '.')) || 0;
     const min = parseFloat(minStock.replace(',', '.')) || 0;
 
-    const baseStock = convertToBaseUnit(qty, purchaseUnit, baseUnit);
-    const costPerBase = baseStock > 0 ? (price / baseStock) : 0;
+    if (editingIngredient) {
+      // Atualizando insumo existente
+      const updatedStock = parseFloat(initialQuantity.replace(',', '.')) || editingIngredient.currentStock;
+      const updatedPrice = parseFloat(initialPrice.replace(',', '.')) || 0;
+      const updatedCostPerBase = updatedStock > 0 ? (updatedPrice / updatedStock) : editingIngredient.costPerBaseUnit;
 
-    addIngredient({
-      name: name.trim(),
-      category,
-      purchaseUnit,
-      baseUnit,
-      currentStock: baseStock,
-      minStock: min,
-      costPerBaseUnit: costPerBase,
-    });
+      updateIngredient({
+        ...editingIngredient,
+        name: name.trim(),
+        category,
+        purchaseUnit,
+        baseUnit,
+        currentStock: updatedStock,
+        minStock: min,
+        costPerBaseUnit: updatedCostPerBase > 0 ? updatedCostPerBase : editingIngredient.costPerBaseUnit
+      });
 
+      setFeedback({ text: `Insumo "${name}" atualizado com sucesso!`, type: 'success' });
+    } else {
+      // Criando novo insumo
+      const qty = parseFloat(initialQuantity.replace(',', '.')) || 0;
+      const price = parseFloat(initialPrice.replace(',', '.')) || 0;
+      const baseStock = convertToBaseUnit(qty, purchaseUnit, baseUnit);
+      const costPerBase = baseStock > 0 ? (price / baseStock) : 0;
+
+      addIngredient({
+        name: name.trim(),
+        category,
+        purchaseUnit,
+        baseUnit,
+        currentStock: baseStock,
+        minStock: min,
+        costPerBaseUnit: costPerBase,
+      });
+
+      setFeedback({ text: `Insumo "${name}" cadastrado com sucesso!`, type: 'success' });
+    }
+
+    setTimeout(() => setFeedback(null), 4000);
     setIsModalOpen(false);
-    setName('');
-    setInitialQuantity('');
-    setInitialPrice('');
-    setMinStock('500');
   };
 
   return (
@@ -99,6 +156,20 @@ export const EstoquePage: React.FC = () => {
         </button>
       </div>
 
+      {feedback && (
+        <div style={{
+          backgroundColor: feedback.type === 'success' ? 'rgba(27, 135, 85, 0.15)' : 'rgba(201, 42, 42, 0.15)',
+          border: `1px solid ${feedback.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'}`,
+          color: feedback.type === 'success' ? '#2ed573' : '#ff6b6b',
+          padding: '12px var(--spacing-md)',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: 'var(--spacing-md)',
+          fontSize: '0.9rem'
+        }}>
+          {feedback.text}
+        </div>
+      )}
+
       {/* Barra de Ações */}
       <div className="actions-bar">
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -114,7 +185,7 @@ export const EstoquePage: React.FC = () => {
         </div>
 
         {activeTab === 'insumos' && (
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+          <button className="btn-primary" onClick={handleOpenCreate}>
             <Plus size={18} />
             Novo Insumo / Embalagem
           </button>
@@ -132,6 +203,7 @@ export const EstoquePage: React.FC = () => {
                 <th>Estoque Atual</th>
                 <th>Custo Médio Base</th>
                 <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -172,12 +244,30 @@ export const EstoquePage: React.FC = () => {
                         </span>
                       )}
                     </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleOpenEdit(ing)}
+                          title="Editar Insumo"
+                          style={{ color: 'var(--color-accent)', padding: '4px' }}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(ing)}
+                          title="Excluir Insumo"
+                          style={{ color: 'var(--color-danger)', padding: '4px' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
               {filteredIngredients.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                     Nenhum insumo encontrado.
                   </td>
                 </tr>
@@ -241,18 +331,20 @@ export const EstoquePage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Cadastro de Insumo */}
+      {/* Modal de Cadastro/Edição de Insumo */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2 className="modal-title">Cadastrar Novo Insumo</h2>
+              <h2 className="modal-title">
+                {editingIngredient ? 'Editar Insumo' : 'Cadastrar Novo Insumo'}
+              </h2>
               <button onClick={() => setIsModalOpen(false)}>
                 <X size={20} color="var(--text-muted)" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateIngredient}>
+            <form onSubmit={handleSaveIngredient}>
               <div className="form-group">
                 <label className="form-label">Nome do Insumo</label>
                 <input
@@ -339,7 +431,7 @@ export const EstoquePage: React.FC = () => {
                   Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
-                  Cadastrar Insumo
+                  {editingIngredient ? 'Salvar Alterações' : 'Cadastrar Insumo'}
                 </button>
               </div>
             </form>

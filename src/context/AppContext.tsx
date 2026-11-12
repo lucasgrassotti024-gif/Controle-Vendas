@@ -34,8 +34,12 @@ interface AppContextType {
   settlePendingSale: (saleId: string) => void; // Baixa de Fiado
   addIngredient: (ingredient: Omit<Ingredient, 'id'>) => void;
   updateIngredient: (ingredient: Ingredient) => void;
+  deleteIngredient: (id: string) => { success: boolean; message?: string };
   addBrownieRecipe: (recipe: Omit<BrownieRecipe, 'id' | 'currentStock'>) => void;
   updateBrownieRecipe: (recipe: BrownieRecipe) => void;
+  deleteBrownieRecipe: (id: string) => void;
+  deletePurchase: (purchaseId: string) => void;
+  deleteSale: (saleId: string) => void;
   getBrownieUnitCost: (recipe: BrownieRecipe) => number;
   resetAllData: () => void;
 }
@@ -277,7 +281,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIngredients(ingredients.map(i => i.id === updated.id ? updated : i));
   };
 
-  // Cadastro e Atualização de Receitas
+  const deleteIngredient = (id: string): { success: boolean; message?: string } => {
+    // Verificar se algum brownie utiliza este ingrediente
+    const isUsedInRecipe = brownies.some(b => b.items.some(it => it.ingredientId === id));
+    if (isUsedInRecipe) {
+      return {
+        success: false,
+        message: 'Este insumo não pode ser excluído porque faz parte de uma ou mais receitas de Brownies. Remova-o da receita antes.'
+      };
+    }
+    setIngredients(ingredients.filter(i => i.id !== id));
+    return { success: true };
+  };
+
+  // Cadastro, Atualização e Exclusão de Receitas
   const addBrownieRecipe = (data: Omit<BrownieRecipe, 'id' | 'currentStock'>) => {
     const newRecipe: BrownieRecipe = {
       ...data,
@@ -289,6 +306,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateBrownieRecipe = (updated: BrownieRecipe) => {
     setBrownies(brownies.map(b => b.id === updated.id ? updated : b));
+  };
+
+  const deleteBrownieRecipe = (id: string) => {
+    setBrownies(brownies.filter(b => b.id !== id));
+  };
+
+  /**
+   * Excluir Compra:
+   * (-) Estorna o insumo comprado do estoque de matéria-prima
+   * (-) Remove a despesa do histórico e do Dashboard
+   */
+  const deletePurchase = (purchaseId: string) => {
+    const purchase = purchases.find(p => p.id === purchaseId);
+    if (!purchase) return;
+
+    const ing = ingredientsMap.get(purchase.ingredientId);
+    if (ing) {
+      const baseQtyToDeduct = convertToBaseUnit(
+        purchase.quantityPurchased,
+        purchase.unit,
+        ing.baseUnit
+      );
+      const updatedIngredients = ingredients.map(i => {
+        if (i.id === ing.id) {
+          return {
+            ...i,
+            currentStock: Math.max(0, i.currentStock - baseQtyToDeduct)
+          };
+        }
+        return i;
+      });
+      setIngredients(updatedIngredients);
+    }
+
+    setPurchases(purchases.filter(p => p.id !== purchaseId));
+  };
+
+  /**
+   * Excluir Venda:
+   * (+) Devolve os brownies prontos vendidos de volta para o estoque
+   * (-) Remove o faturamento (ou cancela a pendência de fiado)
+   */
+  const deleteSale = (saleId: string) => {
+    const sale = sales.find(s => s.id === saleId);
+    if (!sale) return;
+
+    // Devolve os brownies ao estoque
+    const updatedBrownies = brownies.map(b => {
+      if (b.id === sale.brownieRecipeId) {
+        return {
+          ...b,
+          currentStock: b.currentStock + sale.quantity
+        };
+      }
+      return b;
+    });
+
+    setBrownies(updatedBrownies);
+    setSales(sales.filter(s => s.id !== saleId));
   };
 
   // Reset total
@@ -320,8 +396,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         settlePendingSale,
         addIngredient,
         updateIngredient,
+        deleteIngredient,
         addBrownieRecipe,
         updateBrownieRecipe,
+        deleteBrownieRecipe,
+        deletePurchase,
+        deleteSale,
         getBrownieUnitCost,
         resetAllData,
       }}

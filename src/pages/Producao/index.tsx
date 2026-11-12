@@ -8,11 +8,12 @@ import {
   CheckCircle, 
   Clock, 
   X,
-  Trash2
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../services/calcService';
-import { RecipeItem } from '../../types';
+import { RecipeItem, BrownieRecipe } from '../../types';
 import './Producao.css';
 
 export const ProducaoPage: React.FC = () => {
@@ -23,14 +24,17 @@ export const ProducaoPage: React.FC = () => {
     productions, 
     addProduction, 
     getBrownieUnitCost,
-    addBrownieRecipe 
+    addBrownieRecipe,
+    updateBrownieRecipe,
+    deleteBrownieRecipe
   } = useApp();
 
   const [batchesToProduce, setBatchesToProduce] = useState<Record<string, number>>({});
   const [feedbackMessage, setFeedbackMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Modal de Nova Receita
+  // Modal de Nova/Editar Receita
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<BrownieRecipe | null>(null);
   const [newRecipeName, setNewRecipeName] = useState('');
   const [newRecipeDesc, setNewRecipeDesc] = useState('');
   const [newSalePrice, setNewSalePrice] = useState('8.00');
@@ -90,28 +94,74 @@ export const ProducaoPage: React.FC = () => {
     setRecipeItems(recipeItems.filter(i => i.ingredientId !== ingId));
   };
 
-  const handleCreateRecipe = (e: React.FormEvent) => {
+  const handleOpenCreateRecipe = () => {
+    setEditingRecipe(null);
+    setNewRecipeName('');
+    setNewRecipeDesc('');
+    setNewSalePrice('8.00');
+    setNewYieldUnits('16');
+    setRecipeItems([]);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditRecipe = (recipe: BrownieRecipe) => {
+    setEditingRecipe(recipe);
+    setNewRecipeName(recipe.name);
+    setNewRecipeDesc(recipe.description);
+    setNewSalePrice(recipe.defaultSalePrice.toFixed(2));
+    setNewYieldUnits(recipe.yieldUnits.toString());
+    setRecipeItems([...recipe.items]);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteRecipe = (recipe: BrownieRecipe) => {
+    if (window.confirm(`Tem certeza de que deseja excluir a receita do brownie "${recipe.name}"?`)) {
+      deleteBrownieRecipe(recipe.id);
+      setFeedbackMessage({
+        text: `Receita "${recipe.name}" excluída com sucesso.`,
+        type: 'success'
+      });
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const handleSaveRecipe = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRecipeName.trim() || recipeItems.length === 0) return;
 
     const price = parseFloat(newSalePrice.replace(',', '.')) || 0;
     const yieldCount = parseInt(newYieldUnits, 10) || 16;
 
-    addBrownieRecipe({
-      name: newRecipeName.trim(),
-      description: newRecipeDesc.trim(),
-      defaultSalePrice: price,
-      minStock: 10,
-      yieldUnits: yieldCount,
-      items: recipeItems,
-    });
+    if (editingRecipe) {
+      updateBrownieRecipe({
+        ...editingRecipe,
+        name: newRecipeName.trim(),
+        description: newRecipeDesc.trim(),
+        defaultSalePrice: price,
+        yieldUnits: yieldCount,
+        items: recipeItems,
+      });
+      setFeedbackMessage({
+        text: `Receita "${newRecipeName}" atualizada com sucesso!`,
+        type: 'success'
+      });
+    } else {
+      addBrownieRecipe({
+        name: newRecipeName.trim(),
+        description: newRecipeDesc.trim(),
+        defaultSalePrice: price,
+        minStock: 10,
+        yieldUnits: yieldCount,
+        items: recipeItems,
+      });
+      setFeedbackMessage({
+        text: `Receita "${newRecipeName}" criada com sucesso!`,
+        type: 'success'
+      });
+    }
 
+    setTimeout(() => setFeedbackMessage(null), 4000);
     setIsModalOpen(false);
-    setNewRecipeName('');
-    setNewRecipeDesc('');
-    setNewSalePrice('8.00');
-    setNewYieldUnits('16');
-    setRecipeItems([]);
   };
 
   return (
@@ -148,7 +198,7 @@ export const ProducaoPage: React.FC = () => {
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
           Receitas Cadastradas ({brownies.length})
         </h2>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+        <button className="btn-primary" onClick={handleOpenCreateRecipe}>
           <Plus size={18} />
           Nova Receita / Sabor
         </button>
@@ -172,9 +222,25 @@ export const ProducaoPage: React.FC = () => {
                     <h3 className="recipe-title">{recipe.name}</h3>
                     <p className="recipe-desc">{recipe.description}</p>
                   </div>
-                  <span className="badge badge-tag">
-                    Rende {recipe.yieldUnits} un
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="badge badge-tag">
+                      Rende {recipe.yieldUnits} un
+                    </span>
+                    <button
+                      onClick={() => handleOpenEditRecipe(recipe)}
+                      title="Editar Ficha Técnica"
+                      style={{ color: 'var(--color-accent)', padding: '2px' }}
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRecipe(recipe)}
+                      title="Excluir Receita"
+                      style={{ color: 'var(--color-danger)', padding: '2px' }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="financial-pill-row">
@@ -335,18 +401,20 @@ export const ProducaoPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de Criação de Receita */}
+      {/* Modal de Criação/Edição de Receita */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <h2 className="modal-title">Cadastrar Novo Sabor de Brownie</h2>
+              <h2 className="modal-title">
+                {editingRecipe ? 'Editar Ficha Técnica do Brownie' : 'Cadastrar Novo Sabor de Brownie'}
+              </h2>
               <button onClick={() => setIsModalOpen(false)}>
                 <X size={20} color="var(--text-muted)" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateRecipe}>
+            <form onSubmit={handleSaveRecipe}>
               <div className="form-group">
                 <label className="form-label">Nome do Sabor</label>
                 <input
@@ -483,7 +551,7 @@ export const ProducaoPage: React.FC = () => {
                   className="btn-primary"
                   disabled={recipeItems.length === 0}
                 >
-                  Salvar Nova Receita
+                  {editingRecipe ? 'Salvar Alterações da Receita' : 'Salvar Nova Receita'}
                 </button>
               </div>
             </form>

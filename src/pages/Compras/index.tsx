@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { ShoppingCart, PlusCircle, CheckCircle, Clock } from 'lucide-react';
+import { ShoppingCart, PlusCircle, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency, calculateCostPerBaseUnit } from '../../services/calcService';
 import { PurchaseUnit } from '../../types';
 import './Compras.css';
 
 export const ComprasPage: React.FC = () => {
-  const { ingredients, purchases, addPurchase, ingredientsMap } = useApp();
+  const { ingredients, purchases, addPurchase, deletePurchase, ingredientsMap } = useApp();
 
   const [selectedIngredientId, setSelectedIngredientId] = useState<string>(
     ingredients[0]?.id || ''
@@ -200,6 +200,7 @@ export const ComprasPage: React.FC = () => {
                   <th>Qtd Comprada</th>
                   <th>Valor Total</th>
                   <th>Custo Base</th>
+                  <th style={{ textAlign: 'right' }}>Ação</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,6 +213,12 @@ export const ComprasPage: React.FC = () => {
                     hour: '2-digit',
                     minute: '2-digit'
                   });
+
+                  const handleDeletePurchase = () => {
+                    if (window.confirm(`Deseja excluir esta compra de ${p.quantityPurchased} ${p.unit} de ${ing ? ing.name : 'insumo'}? O estoque de matéria-prima será estornado automaticamente.`)) {
+                      deletePurchase(p.id);
+                    }
+                  };
 
                   return (
                     <tr key={p.id}>
@@ -235,13 +242,22 @@ export const ComprasPage: React.FC = () => {
                       <td style={{ fontSize: '0.85rem' }}>
                         {formatCurrency(p.calculatedCostPerBaseUnit)}/{ing?.baseUnit || ''}
                       </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          onClick={handleDeletePurchase}
+                          title="Excluir Compra e Estornar Estoque"
+                          style={{ color: 'var(--color-danger)', padding: '4px' }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
 
                 {purchases.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                       Nenhuma compra registrada ainda. Lance sua primeira compra ao lado!
                     </td>
                   </tr>

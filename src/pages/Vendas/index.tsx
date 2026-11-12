@@ -10,7 +10,8 @@ import {
   Clock, 
   Check, 
   TrendingUp,
-  UserCheck
+  UserCheck,
+  Trash2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../services/calcService';
@@ -18,7 +19,7 @@ import { PaymentMethod } from '../../types';
 import './Vendas.css';
 
 export const VendasPage: React.FC = () => {
-  const { brownies, sales, addSale, settlePendingSale } = useApp();
+  const { brownies, sales, addSale, settlePendingSale, deleteSale } = useApp();
 
   const [selectedBrownieId, setSelectedBrownieId] = useState<string>(
     brownies[0]?.id || ''
@@ -292,13 +293,26 @@ export const VendasPage: React.FC = () => {
                         </strong>
                       </td>
                       <td>
-                        <button
-                          className="btn-settle"
-                          onClick={() => settlePendingSale(sale.id)}
-                          title="Clique para marcar como pago e creditar no caixa"
-                        >
-                          <Check size={14} /> Dar Baixa
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            className="btn-settle"
+                            onClick={() => settlePendingSale(sale.id)}
+                            title="Clique para marcar como pago e creditar no caixa"
+                          >
+                            <Check size={14} /> Dar Baixa
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Deseja cancelar esta venda fiado de ${sale.customerName}? Os ${sale.quantity} brownies voltarão para o estoque.`)) {
+                                deleteSale(sale.id);
+                              }
+                            }}
+                            title="Cancelar Venda e Devolver Brownies ao Estoque"
+                            style={{ color: 'var(--color-danger)', padding: '4px' }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -339,6 +353,7 @@ export const VendasPage: React.FC = () => {
                 <th>Total</th>
                 <th>Pagamento</th>
                 <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -351,6 +366,12 @@ export const VendasPage: React.FC = () => {
                   hour: '2-digit',
                   minute: '2-digit'
                 });
+
+                const handleDeleteSale = () => {
+                  if (window.confirm(`Deseja excluir esta venda de ${s.quantity}x ${b ? b.name : 'Brownie'}? As unidades vendidas serão devolvidas ao estoque.`)) {
+                    deleteSale(s.id);
+                  }
+                };
 
                 return (
                   <tr key={s.id}>
@@ -382,13 +403,22 @@ export const VendasPage: React.FC = () => {
                         </span>
                       )}
                     </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        onClick={handleDeleteSale}
+                        title="Excluir Venda e Devolver Brownies ao Estoque"
+                        style={{ color: 'var(--color-danger)', padding: '4px' }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
 
               {sales.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     Nenhuma venda registrada ainda. Realize a primeira venda no formulário acima!
                   </td>
                 </tr>

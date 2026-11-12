@@ -50,19 +50,34 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
     const data = storageService.getIngredients();
-    if (data.length === 0) {
+    // Remove definitivamente qualquer resquício de mão de obra do estoque
+    const cleaned = data.filter(i => 
+      i.id !== 'ing-mao-obra' && 
+      !i.name.toLowerCase().includes('mão de obra') && 
+      !i.name.toLowerCase().includes('mao de obra')
+    );
+
+    if (cleaned.length === 0) {
       storageService.saveIngredients(initialIngredients);
       return initialIngredients;
     }
-    return data;
+    return cleaned;
   });
+
   const [brownies, setBrownies] = useState<BrownieRecipe[]>(() => {
     const data = storageService.getBrownies();
-    if (data.length === 0) {
+    // Limpa mão de obra dos items das receitas antigas e garante laborCost = 1
+    const cleanedBrownies = data.map(b => ({
+      ...b,
+      laborCost: b.laborCost ?? 1.00,
+      items: b.items.filter(it => it.ingredientId !== 'ing-mao-obra')
+    }));
+
+    if (cleanedBrownies.length === 0) {
       storageService.saveBrownies(initialBrownies);
       return initialBrownies;
     }
-    return data;
+    return cleanedBrownies;
   });
   const [purchases, setPurchases] = useState<Purchase[]>(() => storageService.getPurchases());
   const [productions, setProductions] = useState<ProductionBatch[]>(() => storageService.getProductions());
@@ -297,14 +312,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteIngredient = (id: string): { success: boolean; message?: string } => {
-    // Verificar se algum brownie utiliza este ingrediente
-    const isUsedInRecipe = brownies.some(b => b.items.some(it => it.ingredientId === id));
-    if (isUsedInRecipe) {
-      return {
-        success: false,
-        message: 'Este insumo não pode ser excluído porque faz parte de uma ou mais receitas de Brownies. Remova-o da receita antes.'
-      };
-    }
+    // Se estiver em receitas, remove o item das receitas automaticamente para não travar
+    const updatedBrownies = brownies.map(b => ({
+      ...b,
+      items: b.items.filter(it => it.ingredientId !== id)
+    }));
+    setBrownies(updatedBrownies);
+
+    // Remove do estoque
     setIngredients(ingredients.filter(i => i.id !== id));
     return { success: true };
   };

@@ -5,7 +5,7 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ---
 
 ## Estado Atual
-- **Fase Atual:** FASE 5 — Módulo de Vendas e Gestão de Fiado
+- **Fase Atual:** FASE 6 — Dashboard e Indicadores Financeiros Consolidados
 - **Status:** CONCLUÍDA
 - **Última Atualização:** 2026-11-12
 
@@ -36,15 +36,19 @@ Documento de controle contínuo do andamento do desenvolvimento.
 ### FASE 5 — Módulo de Vendas e Gestão de Fiado
 - **Status:** CONCLUÍDA
 - **Data de Conclusão:** 2026-11-12
+
+### FASE 6 — Dashboard e Indicadores Financeiros Consolidados
+- **Status:** CONCLUÍDA
+- **Data de Conclusão:** 2026-11-12
 - **Implementações:**
-  - Formulário ágil de Venda com seleção de sabor e quantidade.
-  - Validação estrita de estoque de brownies prontos (impede venda sem saldo e avisa o total disponível).
-  - Seletor de pagamento interativo: Dinheiro, Pix, Cartão ou Fiado.
-  - Tratamento inteligente de Fiado:
-    - Campo obrigatório de Nome do Cliente / Devedor.
-    - Seção visual destacada de Contas a Receber (Fiados Pendentes).
-    - Botão funcional "Dar Baixa" que liquida o fiado com data de quitação e transfere o valor para o faturamento realizado.
-  - Tabela com histórico geral de vendas com filtros visuais por status (*Pago* / *Pendente*).
+  - Painel com os 4 KPIs Financeiros Centrais conectados e dinâmicos:
+    - **Faturamento Realizado** (vendas pagas e quitadas).
+    - **Total em Compras** (despesas com matérias-primas e embalagens).
+    - **Lucro Líquido Real** (Faturamento - Compras).
+    - **Fiados a Receber** (total pendente na rua e contagem de devedores).
+  - Painel de Pronta Entrega com barras visuais de progresso de estoque por sabor.
+  - Painel de Valor Imobilizado em Insumos (R$) e lista de alerta de insumos com estoque crítico.
+  - Recurso de Restaurar Dados de Fábrica para testes limpos.
 - **Testes & Validação:**
   - `npm run build` executado com 0 erros de compilação.
-- **Próximo Passo:** Planejamento e aprovação da FASE 6 (Dashboard e Indicadores Financeiros Consolidados).
+- **Próximo Passo:** Planejamento e aprovação da FASE 7 (Testes Integrados Ponta a Ponta e Validação Geral).

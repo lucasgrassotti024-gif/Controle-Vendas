@@ -1,47 +1,176 @@
-.metrics-grid-preview {
+.dashboard-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
-.metric-card-preview {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+.kpi-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
   transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
-.metric-card-preview:hover {
+.kpi-card:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.metric-icon-preview {
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.kpi-card.revenue::before {
+  background-color: var(--color-success);
+}
+
+.kpi-card.purchases::before {
+  background-color: var(--color-danger);
+}
+
+.kpi-card.profit::before {
+  background-color: var(--color-accent);
+}
+
+.kpi-card.receivables::before {
+  background-color: var(--color-warning);
+}
+
+.kpi-icon-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
-.metric-data-preview {
+.kpi-data {
   display: flex;
   flex-direction: column;
 }
 
-.metric-label-preview {
-  font-size: 0.85rem;
+.kpi-label {
+  font-size: 0.8rem;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
-.metric-value-preview {
-  font-size: 1.4rem;
-  color: var(--text-main);
+.kpi-value {
+  font-size: 1.55rem;
+  font-weight: 700;
   font-family: var(--font-heading);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.kpi-subtext {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.dashboard-details-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+@media (max-width: 960px) {
+  .dashboard-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.panel-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Barra de progresso de estoque de brownies */
+.brownie-stock-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--spacing-md);
+}
+
+.brownie-stock-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: var(--bg-surface-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+/* Alertas de Insumos Críticos */
+.critical-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: rgba(194, 120, 3, 0.08);
+  border: 1px solid rgba(194, 120, 3, 0.25);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.85rem;
+}
+
+.reset-banner {
+  background-color: var(--bg-surface-elevated);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
 }

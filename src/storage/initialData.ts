@@ -140,16 +140,6 @@ export const initialIngredients: Ingredient[] = [
     currentStock: 0,
     minStock: 30,
     costPerBaseUnit: 7.00 / 100, // R$ 0,07 por saco (R$ 7,00 por 100 un)
-  },
-  {
-    id: 'ing-mao-obra',
-    name: 'Mão de Obra',
-    category: 'outro',
-    purchaseUnit: 'un',
-    baseUnit: 'un',
-    currentStock: 999999, // Custo de serviço fixo não esgota
-    minStock: 0,
-    costPerBaseUnit: 1.00, // R$ 1,00 por brownie
   }
 ];
 
@@ -162,6 +152,7 @@ export const initialBrownies: BrownieRecipe[] = [
     currentStock: 0,
     minStock: 8,
     yieldUnits: 8, // Fornada rende 8 unidades
+    laborCost: 1.00, // Mão de obra por brownie
     items: [
       { ingredientId: 'ing-choc-tradicional', quantity: 150 }, // 18.75g * 8
       { ingredientId: 'ing-achocolatado', quantity: 100 },     // 12.5g * 8
@@ -171,7 +162,6 @@ export const initialBrownies: BrownieRecipe[] = [
       { ingredientId: 'ing-acucar', quantity: 350 },           // 43.75g * 8
       { ingredientId: 'ing-embalagem', quantity: 8 },          // 1 un por brownie
       { ingredientId: 'ing-adesivo', quantity: 8 },            // 1 un por brownie
-      { ingredientId: 'ing-mao-obra', quantity: 8 },           // R$ 1,00 por brownie
     ]
   },
   {
@@ -182,6 +172,7 @@ export const initialBrownies: BrownieRecipe[] = [
     currentStock: 0,
     minStock: 8,
     yieldUnits: 8,
+    laborCost: 1.00,
     items: [
       { ingredientId: 'ing-choc-branco', quantity: 150 },      // 18.75g * 8
       { ingredientId: 'ing-achocolatado', quantity: 100 },     // 12.5g * 8
@@ -192,7 +183,6 @@ export const initialBrownies: BrownieRecipe[] = [
       { ingredientId: 'ing-leite-po', quantity: 80 },          // 10g por fatia (ajustável)
       { ingredientId: 'ing-embalagem', quantity: 8 },
       { ingredientId: 'ing-adesivo', quantity: 8 },
-      { ingredientId: 'ing-mao-obra', quantity: 8 },
     ]
   },
   {
@@ -203,6 +193,7 @@ export const initialBrownies: BrownieRecipe[] = [
     currentStock: 0,
     minStock: 8,
     yieldUnits: 8,
+    laborCost: 1.00,
     items: [
       // Massa base
       { ingredientId: 'ing-choc-tradicional', quantity: 150 },
@@ -219,7 +210,6 @@ export const initialBrownies: BrownieRecipe[] = [
       { ingredientId: 'ing-adesivo', quantity: 8 },
       { ingredientId: 'ing-garfos', quantity: 8 },
       { ingredientId: 'ing-sacos-sacole', quantity: 8 },
-      { ingredientId: 'ing-mao-obra', quantity: 8 },
     ]
   }
 ];

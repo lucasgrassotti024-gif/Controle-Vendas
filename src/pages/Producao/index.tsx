@@ -39,6 +39,7 @@ export const ProducaoPage: React.FC = () => {
   const [newRecipeDesc, setNewRecipeDesc] = useState('');
   const [newSalePrice, setNewSalePrice] = useState('8.00');
   const [newYieldUnits, setNewYieldUnits] = useState('16');
+  const [newLaborCost, setNewLaborCost] = useState('1.00');
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
 
   // Campos temporários para adicionar ingrediente no modal
@@ -99,7 +100,8 @@ export const ProducaoPage: React.FC = () => {
     setNewRecipeName('');
     setNewRecipeDesc('');
     setNewSalePrice('8.00');
-    setNewYieldUnits('16');
+    setNewYieldUnits('8');
+    setNewLaborCost('1.00');
     setRecipeItems([]);
     setIsModalOpen(true);
   };
@@ -110,6 +112,7 @@ export const ProducaoPage: React.FC = () => {
     setNewRecipeDesc(recipe.description);
     setNewSalePrice(recipe.defaultSalePrice.toFixed(2));
     setNewYieldUnits(recipe.yieldUnits.toString());
+    setNewLaborCost((recipe.laborCost ?? 1.00).toFixed(2));
     setRecipeItems([...recipe.items]);
     setIsModalOpen(true);
   };
@@ -130,7 +133,8 @@ export const ProducaoPage: React.FC = () => {
     if (!newRecipeName.trim() || recipeItems.length === 0) return;
 
     const price = parseFloat(newSalePrice.replace(',', '.')) || 0;
-    const yieldCount = parseInt(newYieldUnits, 10) || 16;
+    const yieldCount = parseInt(newYieldUnits, 10) || 8;
+    const labor = parseFloat(newLaborCost.replace(',', '.')) || 0;
 
     if (editingRecipe) {
       updateBrownieRecipe({
@@ -139,6 +143,7 @@ export const ProducaoPage: React.FC = () => {
         description: newRecipeDesc.trim(),
         defaultSalePrice: price,
         yieldUnits: yieldCount,
+        laborCost: labor,
         items: recipeItems,
       });
       setFeedbackMessage({
@@ -150,8 +155,9 @@ export const ProducaoPage: React.FC = () => {
         name: newRecipeName.trim(),
         description: newRecipeDesc.trim(),
         defaultSalePrice: price,
-        minStock: 10,
+        minStock: 8,
         yieldUnits: yieldCount,
+        laborCost: labor,
         items: recipeItems,
       });
       setFeedbackMessage({
@@ -290,6 +296,15 @@ export const ProducaoPage: React.FC = () => {
                       </div>
                     );
                   })}
+                  {(recipe.laborCost ?? 0) > 0 && (
+                    <div className="ingredient-mini-row" style={{ color: 'var(--color-accent)' }}>
+                      <span>💼 Mão de Obra</span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>1 un/fat</span>
+                        <strong>{formatCurrency(recipe.laborCost || 0)}/un</strong>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -459,6 +474,18 @@ export const ProducaoPage: React.FC = () => {
                     className="form-input"
                     value={newYieldUnits}
                     onChange={(e) => setNewYieldUnits(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Mão de Obra por Fatia (R$)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: 1.00"
+                    className="form-input"
+                    value={newLaborCost}
+                    onChange={(e) => setNewLaborCost(e.target.value)}
                   />
                 </div>
               </div>

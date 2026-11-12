@@ -56,7 +56,9 @@ export function calculateBrownieUnitCost(
   }
 
   const yieldCount = recipe.yieldUnits > 0 ? recipe.yieldUnits : 1;
-  return totalRecipeCost / yieldCount;
+  const ingredientsUnitCost = totalRecipeCost / yieldCount;
+  const labor = recipe.laborCost || 0;
+  return ingredientsUnitCost + labor;
 }
 
 /**

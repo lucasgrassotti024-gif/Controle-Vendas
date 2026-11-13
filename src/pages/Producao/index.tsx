@@ -11,13 +11,18 @@ import {
   Trash2,
   Edit2,
   Info,
-  Layers,
-  Image as ImageIcon
+  Layers
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../services/calcService';
 import { RecipeItem, BrownieRecipe } from '../../types';
 import './Producao.css';
+
+const DEFAULT_IMAGES: Record<string, string> = {
+  'brownie-tradicional': '/images/brownie-tradicional.png',
+  'brownie-branco': '/images/brownie-branco.png',
+  'brownie-ganache': '/images/brownie-ganache.jpg',
+};
 
 export const ProducaoPage: React.FC = () => {
   const { 
@@ -219,21 +224,23 @@ export const ProducaoPage: React.FC = () => {
             <div key={recipe.id} className="recipe-card-clean">
               {/* Foto do Brownie */}
               <div className="recipe-image-wrapper">
-                {recipe.imageUrl ? (
-                  <img 
-                    src={recipe.imageUrl} 
-                    alt={recipe.name} 
-                    className="recipe-image" 
-                    onError={(e) => {
-                      // Fallback visual se a imagem falhar
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-                    <ImageIcon size={40} />
-                  </div>
-                )}
+                {(() => {
+                  const fallback = DEFAULT_IMAGES[recipe.id] || '/images/brownie-tradicional.png';
+                  const initialSrc = recipe.imageUrl || fallback;
+                  return (
+                    <img 
+                      src={initialSrc} 
+                      alt={recipe.name} 
+                      className="recipe-image"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.src.includes('brownie-tradicional.png')) {
+                          target.src = '/images/brownie-tradicional.png';
+                        }
+                      }}
+                    />
+                  );
+                })()}
                 <div className="recipe-stock-badge">
                   {recipe.currentStock} prontos
                 </div>

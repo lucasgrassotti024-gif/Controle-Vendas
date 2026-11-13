@@ -136,60 +136,40 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
         </div>
-      </div>
 
-      {/* 2. Destaques Periódicos: Lucro da Semana e Lucro do Mês */}
-      <div className="period-profit-grid">
-        {/* Card Lucro da Semana */}
-        <div className="period-card period-week">
-          <div className="period-card-top">
-            <div className="period-icon-box week">
-              <Calendar size={22} />
-            </div>
-            <div>
-              <span className="period-badge">Semana Atual</span>
-              <h3 className="period-title">Lucro Líquido da Semana</h3>
-            </div>
+        {/* KPI 6: Lucro da Semana Atual (Igual aos outros) */}
+        <div className="kpi-card week">
+          <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+            <Calendar size={24} />
           </div>
-          <div className="period-value-wrapper">
-            <strong className={`period-value ${weeklyProfit.netProfit >= 0 ? 'positive' : 'negative'}`}>
+          <div className="kpi-data">
+            <span className="kpi-label">Lucro da Semana</span>
+            <strong className="kpi-value" style={{ color: weeklyProfit.netProfit >= 0 ? '#2ed573' : '#ff6b6b' }}>
               {formatCurrency(weeklyProfit.netProfit)}
             </strong>
-          </div>
-          <div className="period-breakdown">
-            <span>Vendas: <strong style={{ color: '#2ed573' }}>{formatCurrency(weeklyProfit.revenue)}</strong></span>
-            <span>Compras: <strong style={{ color: '#ff6b6b' }}>{formatCurrency(weeklyProfit.purchases)}</strong></span>
-            {weeklyProfit.labor > 0 && (
-              <span>Mão de Obra: <strong style={{ color: 'var(--color-accent)' }}>{formatCurrency(weeklyProfit.labor)}</strong></span>
-            )}
+            <span className="kpi-subtext">
+              Vendas {formatCurrency(weeklyProfit.revenue)} - Compras {formatCurrency(weeklyProfit.purchases)}
+            </span>
           </div>
         </div>
 
-        {/* Card Lucro do Mês */}
-        <div className="period-card period-month">
-          <div className="period-card-top">
-            <div className="period-icon-box month">
-              <CalendarDays size={22} />
-            </div>
-            <div>
-              <span className="period-badge">Mês Atual</span>
-              <h3 className="period-title">Lucro Líquido do Mês</h3>
-            </div>
+        {/* KPI 7: Lucro do Mês Atual (Igual aos outros) */}
+        <div className="kpi-card month">
+          <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' }}>
+            <CalendarDays size={24} />
           </div>
-          <div className="period-value-wrapper">
-            <strong className={`period-value ${monthlyProfit.netProfit >= 0 ? 'positive' : 'negative'}`}>
+          <div className="kpi-data">
+            <span className="kpi-label">Lucro do Mês</span>
+            <strong className="kpi-value" style={{ color: monthlyProfit.netProfit >= 0 ? '#2ed573' : '#ff6b6b' }}>
               {formatCurrency(monthlyProfit.netProfit)}
             </strong>
-          </div>
-          <div className="period-breakdown">
-            <span>Vendas: <strong style={{ color: '#2ed573' }}>{formatCurrency(monthlyProfit.revenue)}</strong></span>
-            <span>Compras: <strong style={{ color: '#ff6b6b' }}>{formatCurrency(monthlyProfit.purchases)}</strong></span>
-            {monthlyProfit.labor > 0 && (
-              <span>Mão de Obra: <strong style={{ color: 'var(--color-accent)' }}>{formatCurrency(monthlyProfit.labor)}</strong></span>
-            )}
+            <span className="kpi-subtext">
+              Vendas {formatCurrency(monthlyProfit.revenue)} - Compras {formatCurrency(monthlyProfit.purchases)}
+            </span>
           </div>
         </div>
       </div>
+
 
       {/* 3. Gráfico de Tempo: Lucro Líquido Diário (Últimos 7 Dias) */}
       <div className="chart-panel">

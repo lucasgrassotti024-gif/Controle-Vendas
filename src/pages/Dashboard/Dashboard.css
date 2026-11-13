@@ -53,6 +53,14 @@
   background-color: #38bdf8;
 }
 
+.kpi-card.week::before {
+  background-color: #a855f7;
+}
+
+.kpi-card.month::before {
+  background-color: #ec4899;
+}
+
 .kpi-icon-box {
   display: flex;
   align-items: center;

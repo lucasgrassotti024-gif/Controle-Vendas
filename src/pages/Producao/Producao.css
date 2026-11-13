@@ -84,8 +84,16 @@
 /* Botões de Ação do Card */
 .recipe-actions-clean {
   display: flex;
-  gap: var(--spacing-xs);
+  flex-direction: column;
+  gap: 8px;
   margin-top: var(--spacing-sm);
+  width: 100%;
+}
+
+.recipe-actions-primary {
+  display: flex;
+  gap: 6px;
+  width: 100%;
 }
 
 .btn-produce-clean {
@@ -97,14 +105,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  flex: 1;
+  gap: 6px;
+  flex: 1.2;
   font-size: 0.85rem;
-  transition: opacity var(--transition-fast);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
 .btn-produce-clean:hover {
-  opacity: 0.9;
+  opacity: 0.95;
+  transform: translateY(-1px);
 }
 
 .btn-details-clean {
@@ -117,7 +126,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  flex: 1;
   font-size: 0.85rem;
   transition: all var(--transition-fast);
 }
@@ -125,6 +135,41 @@
 .btn-details-clean:hover {
   color: var(--text-main);
   border-color: var(--color-accent);
+}
+
+.recipe-actions-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+}
+
+.btn-action-icon {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-action-icon:hover {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-action-delete:hover {
+  color: #ff6b6b;
+  border-color: rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.08);
 }
 
 /* Modal Detalhado */

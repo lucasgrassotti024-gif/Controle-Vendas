@@ -100,8 +100,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubBrownies = syncService.subscribeBrownies((remoteBrownies) => {
       if (remoteBrownies && remoteBrownies.length > 0) {
         isSyncingFromRemote.current = true;
-        setBrownies(remoteBrownies);
-        storageService.saveBrownies(remoteBrownies);
+        // Garante que fotos oficiais de initialBrownies sejam mantidas caso ausentes no banco remoto
+        const enriched = remoteBrownies.map(b => {
+          const matchInitial = initialBrownies.find(ib => ib.id === b.id);
+          return {
+            ...b,
+            imageUrl: b.imageUrl || matchInitial?.imageUrl,
+            laborCost: b.laborCost ?? 1.00
+          };
+        });
+        setBrownies(enriched);
+        storageService.saveBrownies(enriched);
         setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
       }
     });

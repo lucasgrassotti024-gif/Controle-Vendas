@@ -250,41 +250,45 @@ export const ProducaoPage: React.FC = () => {
 
                 {/* Ações: Produzir e Ver Ficha Técnica */}
                 <div className="recipe-actions-clean">
-                  <button
-                    className="btn-produce-clean"
-                    onClick={() => handleProduce(recipe.id)}
-                    title="Produzir 1 fornada"
-                  >
-                    <Flame size={15} />
-                    Produzir
-                  </button>
+                  <div className="recipe-actions-primary">
+                    <button
+                      className="btn-produce-clean"
+                      onClick={() => handleProduce(recipe.id)}
+                      title="Produzir 1 fornada"
+                    >
+                      <Flame size={15} />
+                      Produzir
+                    </button>
 
-                  <button
-                    className="btn-details-clean"
-                    onClick={() => setSelectedRecipeForDetails(recipe)}
-                    title="Ver detalhes da receita e custos"
-                  >
-                    <Info size={15} />
-                    Detalhes
-                  </button>
+                    <button
+                      className="btn-details-clean"
+                      onClick={() => setSelectedRecipeForDetails(recipe)}
+                      title="Ver detalhes da receita e custos"
+                    >
+                      <Info size={15} />
+                      Detalhes
+                    </button>
+                  </div>
 
-                  <button
-                    className="btn-details-clean"
-                    onClick={() => handleOpenEditRecipe(recipe)}
-                    title="Editar Ficha"
-                    style={{ padding: '8px 10px' }}
-                  >
-                    <Edit2 size={15} />
-                  </button>
+                  <div className="recipe-actions-secondary">
+                    <button
+                      className="btn-action-icon"
+                      onClick={() => handleOpenEditRecipe(recipe)}
+                      title="Editar Ficha Técnica"
+                    >
+                      <Edit2 size={15} />
+                      <span>Editar</span>
+                    </button>
 
-                  <button
-                    className="btn-details-clean"
-                    onClick={() => handleDeleteRecipe(recipe)}
-                    title="Excluir Sabor"
-                    style={{ padding: '8px 10px', color: 'var(--color-danger)' }}
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                    <button
+                      className="btn-action-icon btn-action-delete"
+                      onClick={() => handleDeleteRecipe(recipe)}
+                      title="Excluir Sabor"
+                    >
+                      <Trash2 size={15} />
+                      <span>Excluir</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

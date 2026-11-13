@@ -120,10 +120,25 @@ export function computeDashboardMetrics(
   // Saldo de brownies prontos
   const stockFinishedUnits = brownies.reduce((acc, b) => acc + (b.currentStock || 0), 0);
 
-  // Valor imobilizado em insumos
+  // Valor imobilizado em insumos da despensa (estoque * custo base)
   const stockInsumosValue = ingredients.reduce((acc, ing) => {
     return acc + (ing.currentStock * ing.costPerBaseUnit);
   }, 0);
+
+  // Mapa de ingredientes para calcular custo dos brownies prontos
+  const ingredientsMap = new Map<string, Ingredient>(
+    ingredients.map(ing => [ing.id, ing])
+  );
+
+  // Valor em dinheiro gasto nos brownies prontos no estoque
+  const stockFinishedValue = brownies.reduce((acc, b) => {
+    if (b.currentStock <= 0) return acc;
+    const unitCost = calculateBrownieUnitCost(b, ingredientsMap, true);
+    return acc + (b.currentStock * unitCost);
+  }, 0);
+
+  // Total geral de dinheiro gasto imobilizado no estoque (Insumos + Brownies prontos)
+  const totalStockInvested = stockInsumosValue + stockFinishedValue;
 
   // Alerta de insumos com estoque baixo
   const lowStockIngredientsCount = ingredients.filter(
@@ -139,7 +154,10 @@ export function computeDashboardMetrics(
     pendingSalesCount,
     stockFinishedUnits,
     stockInsumosValue,
+    stockFinishedValue,
+    totalStockInvested,
     lowStockIngredientsCount,
   };
 }
+
 

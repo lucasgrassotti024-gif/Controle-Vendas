@@ -103,6 +103,22 @@ export const DashboardPage: React.FC = () => {
             <span className="kpi-subtext">{metrics.pendingSalesCount} cliente(s) devendo</span>
           </div>
         </div>
+
+        {/* KPI 5: Dinheiro Gasto em Estoque (Patrimônio Imobilizado) */}
+        <div className="kpi-card inventory">
+          <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+            <Boxes size={24} />
+          </div>
+          <div className="kpi-data">
+            <span className="kpi-label">Dinheiro Gasto em Estoque</span>
+            <strong className="kpi-value" style={{ color: '#38bdf8' }}>
+              {formatCurrency(metrics.totalStockInvested)}
+            </strong>
+            <span className="kpi-subtext">
+              {formatCurrency(metrics.stockInsumosValue)} insumos + {formatCurrency(metrics.stockFinishedValue)} prontos
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* 2. Grid de Detalhes: Estoque de Prontos vs Insumos Críticos */}

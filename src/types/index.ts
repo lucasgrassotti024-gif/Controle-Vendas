@@ -90,7 +90,10 @@ export interface DashboardMetrics {
   pendingReceivables: number;      // Total de fiados não recebidos
   pendingSalesCount: number;       // Quantas vendas fiado em aberto
   stockFinishedUnits: number;      // Total de brownies prontos para venda
-  stockInsumosValue: number;       // Valor em R$ imobilizado em insumos
+  stockInsumosValue: number;       // Valor em R$ imobilizado em insumos da despensa
+  stockFinishedValue: number;      // Valor em R$ gasto nos brownies prontos em estoque
+  totalStockInvested: number;      // Dinheiro total gasto imobilizado no estoque (insumos + brownies)
   lowStockIngredientsCount: number;// Quantos insumos estão abaixo do estoque mínimo
 }
+
 

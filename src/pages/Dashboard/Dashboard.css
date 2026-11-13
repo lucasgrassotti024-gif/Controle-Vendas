@@ -49,6 +49,10 @@
   background-color: var(--color-warning);
 }
 
+.kpi-card.inventory::before {
+  background-color: #38bdf8;
+}
+
 .kpi-icon-box {
   display: flex;
   align-items: center;

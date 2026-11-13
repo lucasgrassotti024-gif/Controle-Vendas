@@ -160,4 +160,147 @@ export function computeDashboardMetrics(
   };
 }
 
+export interface DailyProfitPoint {
+  dateKey: string;      // YYYY-MM-DD
+  dayLabel: string;     // ex: "13/11" ou "Qui"
+  weekday: string;      // ex: "Qui"
+  revenue: number;      // faturamento realizado
+  purchases: number;    // despesas em insumos
+  labor: number;        // mão de obra paga
+  netProfit: number;    // lucro líquido do dia
+}
+
+/**
+ * Agrupa o histórico dos últimos N dias (padrão 7 dias) apurando faturamento, despesas e lucro por dia.
+ */
+export function getDailyProfitHistory(
+  sales: Sale[],
+  purchases: Purchase[],
+  productions: ProductionBatch[],
+  daysCount: number = 7
+): DailyProfitPoint[] {
+  const result: DailyProfitPoint[] = [];
+  const now = new Date();
+
+  // Gera os últimos N dias em ordem cronológica
+  for (let i = daysCount - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+
+    const nextD = new Date(d);
+    nextD.setDate(nextD.getDate() + 1);
+
+    const dateKey = d.toISOString().split('T')[0];
+    const dayLabel = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+
+    // Vendas pagas do dia
+    const dayRevenue = sales
+      .filter(s => {
+        if (s.status !== 'pago') return false;
+        const sDate = new Date(s.paidAt || s.date);
+        return sDate >= d && sDate < nextD;
+      })
+      .reduce((acc, s) => acc + s.totalAmount, 0);
+
+    // Compras realizadas no dia
+    const dayPurchases = purchases
+      .filter(p => {
+        const pDate = new Date(p.date);
+        return pDate >= d && pDate < nextD;
+      })
+      .reduce((acc, p) => acc + p.totalCost, 0);
+
+    // Mão de obra paga de fornadas no dia
+    const dayLabor = productions
+      .filter(prod => {
+        const prodDate = new Date(prod.date);
+        return prodDate >= d && prodDate < nextD;
+      })
+      .reduce((acc, prod) => acc + (prod.laborCostTotal || 0), 0);
+
+    const netProfit = dayRevenue - dayPurchases - dayLabor;
+
+    result.push({
+      dateKey,
+      dayLabel,
+      weekday,
+      revenue: dayRevenue,
+      purchases: dayPurchases,
+      labor: dayLabor,
+      netProfit,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Calcula o lucro líquido acumulado da semana atual (segunda até hoje).
+ */
+export function getWeeklyProfit(
+  sales: Sale[],
+  purchases: Purchase[],
+  productions: ProductionBatch[]
+): { netProfit: number; revenue: number; purchases: number; labor: number } {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 domingo, 1 segunda ...
+  const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - diffToMonday);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const revenue = sales
+    .filter(s => s.status === 'pago' && new Date(s.paidAt || s.date) >= startOfWeek)
+    .reduce((acc, s) => acc + s.totalAmount, 0);
+
+  const purchasesCost = purchases
+    .filter(p => new Date(p.date) >= startOfWeek)
+    .reduce((acc, p) => acc + p.totalCost, 0);
+
+  const laborCost = productions
+    .filter(prod => new Date(prod.date) >= startOfWeek)
+    .reduce((acc, prod) => acc + (prod.laborCostTotal || 0), 0);
+
+  return {
+    netProfit: revenue - purchasesCost - laborCost,
+    revenue,
+    purchases: purchasesCost,
+    labor: laborCost,
+  };
+}
+
+/**
+ * Calcula o lucro líquido acumulado do mês atual (dia 1 até hoje).
+ */
+export function getMonthlyProfit(
+  sales: Sale[],
+  purchases: Purchase[],
+  productions: ProductionBatch[]
+): { netProfit: number; revenue: number; purchases: number; labor: number } {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+  const revenue = sales
+    .filter(s => s.status === 'pago' && new Date(s.paidAt || s.date) >= startOfMonth)
+    .reduce((acc, s) => acc + s.totalAmount, 0);
+
+  const purchasesCost = purchases
+    .filter(p => new Date(p.date) >= startOfMonth)
+    .reduce((acc, p) => acc + p.totalCost, 0);
+
+  const laborCost = productions
+    .filter(prod => new Date(prod.date) >= startOfMonth)
+    .reduce((acc, prod) => acc + (prod.laborCostTotal || 0), 0);
+
+  return {
+    netProfit: revenue - purchasesCost - laborCost,
+    revenue,
+    purchases: purchasesCost,
+    labor: laborCost,
+  };
+}
+
 

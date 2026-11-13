@@ -216,3 +216,284 @@
     justify-content: center;
   }
 }
+
+/* CARDS DE DESTAQUE PERIÓDICO (SEMANA E MÊS) */
+.period-profit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.period-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.period-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224, 159, 62, 0.4);
+}
+
+.period-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.period-card.period-week::before {
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+}
+
+.period-card.period-month::before {
+  background: linear-gradient(180deg, var(--color-accent), #f59e0b);
+}
+
+.period-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.period-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.period-icon-box.week {
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.period-icon-box.month {
+  background-color: rgba(224, 159, 62, 0.15);
+  color: var(--color-accent);
+}
+
+.period-badge {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: block;
+}
+
+.period-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.period-value-wrapper {
+  margin: 6px 0;
+}
+
+.period-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  line-height: 1.1;
+}
+
+.period-value.positive {
+  color: #2ed573;
+}
+
+.period-value.negative {
+  color: #ff6b6b;
+}
+
+.period-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* PAINEL GRÁFICO DE LUCRO DIÁRIO */
+.chart-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.profit {
+  background-color: #2ed573;
+}
+
+.legend-dot.loss {
+  background-color: #ff6b6b;
+}
+
+.daily-chart-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  height: 220px;
+  padding: 16px 8px 0;
+  border-bottom: 2px solid var(--border-subtle);
+  position: relative;
+}
+
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.chart-val-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.chart-val-label.positive {
+  color: #2ed573;
+}
+
+.chart-val-label.negative {
+  color: #ff6b6b;
+}
+
+.chart-bar {
+  width: 65%;
+  max-width: 44px;
+  min-width: 18px;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.chart-bar:hover {
+  transform: scaleY(1.04);
+  filter: brightness(1.2);
+}
+
+.chart-bar.positive {
+  background: linear-gradient(180deg, #2ed573, #1e90ff);
+}
+
+.chart-bar.negative {
+  background: linear-gradient(180deg, #ff6b6b, #c0392b);
+}
+
+.chart-bar.zero {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chart-label-day {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.chart-label-day strong {
+  color: var(--text-main);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .period-profit-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .daily-chart-container {
+    gap: 6px;
+    height: 190px;
+    padding: 8px 0 0;
+  }
+
+  .chart-bar {
+    width: 80%;
+  }
+
+  .chart-val-label {
+    font-size: 0.65rem;
+  }
+}

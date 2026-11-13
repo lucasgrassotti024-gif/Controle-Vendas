@@ -10,14 +10,31 @@ import {
   Package, 
   RotateCcw,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  Calendar,
+  CalendarDays,
+  BarChart3
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatCurrency, formatStock } from '../../services/calcService';
+import { 
+  formatCurrency, 
+  formatStock,
+  getDailyProfitHistory,
+  getWeeklyProfit,
+  getMonthlyProfit
+} from '../../services/calcService';
 import './Dashboard.css';
 
 export const DashboardPage: React.FC = () => {
-  const { metrics, brownies, ingredients, resetAllData } = useApp();
+  const { metrics, brownies, ingredients, sales, purchases, productions, resetAllData } = useApp();
+
+  // Lucro da Semana e do Mês
+  const weeklyProfit = getWeeklyProfit(sales, purchases, productions);
+  const monthlyProfit = getMonthlyProfit(sales, purchases, productions);
+
+  // Histórico Diário (últimos 7 dias)
+  const dailyHistory = getDailyProfitHistory(sales, purchases, productions, 7);
+  const maxDayNetProfit = Math.max(...dailyHistory.map(d => Math.abs(d.netProfit)), 50);
 
   const handleReset = () => {
     if (window.confirm('Atenção: Deseja realmente restaurar os dados de fábrica? Isso recarregará os insumos e brownies padrão.')) {
@@ -118,6 +135,106 @@ export const DashboardPage: React.FC = () => {
               {formatCurrency(metrics.stockInsumosValue)} insumos + {formatCurrency(metrics.stockFinishedValue)} prontos
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* 2. Destaques Periódicos: Lucro da Semana e Lucro do Mês */}
+      <div className="period-profit-grid">
+        {/* Card Lucro da Semana */}
+        <div className="period-card period-week">
+          <div className="period-card-top">
+            <div className="period-icon-box week">
+              <Calendar size={22} />
+            </div>
+            <div>
+              <span className="period-badge">Semana Atual</span>
+              <h3 className="period-title">Lucro Líquido da Semana</h3>
+            </div>
+          </div>
+          <div className="period-value-wrapper">
+            <strong className={`period-value ${weeklyProfit.netProfit >= 0 ? 'positive' : 'negative'}`}>
+              {formatCurrency(weeklyProfit.netProfit)}
+            </strong>
+          </div>
+          <div className="period-breakdown">
+            <span>Vendas: <strong style={{ color: '#2ed573' }}>{formatCurrency(weeklyProfit.revenue)}</strong></span>
+            <span>Compras: <strong style={{ color: '#ff6b6b' }}>{formatCurrency(weeklyProfit.purchases)}</strong></span>
+            {weeklyProfit.labor > 0 && (
+              <span>Mão de Obra: <strong style={{ color: 'var(--color-accent)' }}>{formatCurrency(weeklyProfit.labor)}</strong></span>
+            )}
+          </div>
+        </div>
+
+        {/* Card Lucro do Mês */}
+        <div className="period-card period-month">
+          <div className="period-card-top">
+            <div className="period-icon-box month">
+              <CalendarDays size={22} />
+            </div>
+            <div>
+              <span className="period-badge">Mês Atual</span>
+              <h3 className="period-title">Lucro Líquido do Mês</h3>
+            </div>
+          </div>
+          <div className="period-value-wrapper">
+            <strong className={`period-value ${monthlyProfit.netProfit >= 0 ? 'positive' : 'negative'}`}>
+              {formatCurrency(monthlyProfit.netProfit)}
+            </strong>
+          </div>
+          <div className="period-breakdown">
+            <span>Vendas: <strong style={{ color: '#2ed573' }}>{formatCurrency(monthlyProfit.revenue)}</strong></span>
+            <span>Compras: <strong style={{ color: '#ff6b6b' }}>{formatCurrency(monthlyProfit.purchases)}</strong></span>
+            {monthlyProfit.labor > 0 && (
+              <span>Mão de Obra: <strong style={{ color: 'var(--color-accent)' }}>{formatCurrency(monthlyProfit.labor)}</strong></span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Gráfico de Tempo: Lucro Líquido Diário (Últimos 7 Dias) */}
+      <div className="chart-panel">
+        <div className="chart-header">
+          <div>
+            <div className="chart-title">
+              <BarChart3 size={20} color="var(--color-accent)" />
+              Evolução do Lucro Diário (Últimos 7 Dias)
+            </div>
+            <p className="chart-subtitle">
+              Acompanhe a variação diária de lucro líquido (Vendas - Compras - Mão de obra).
+            </p>
+          </div>
+          <div className="chart-legend">
+            <span className="legend-item"><span className="legend-dot profit"></span> Lucro Positivo</span>
+            <span className="legend-item"><span className="legend-dot loss"></span> Despesa/Prejuízo</span>
+          </div>
+        </div>
+
+        {/* Gráfico de Barras Responsivo */}
+        <div className="daily-chart-container">
+          {dailyHistory.map((day) => {
+            const isPositive = day.netProfit >= 0;
+            const barHeightPct = Math.min(100, Math.max(12, Math.round((Math.abs(day.netProfit) / maxDayNetProfit) * 100)));
+            const isZero = day.netProfit === 0 && day.revenue === 0 && day.purchases === 0;
+
+            return (
+              <div key={day.dateKey} className="chart-col">
+                <div className="chart-bar-wrapper">
+                  <span className={`chart-val-label ${isPositive ? 'positive' : 'negative'}`}>
+                    {isZero ? 'R$ 0' : formatCurrency(day.netProfit)}
+                  </span>
+                  <div
+                    className={`chart-bar ${isPositive ? 'positive' : 'negative'} ${isZero ? 'zero' : ''}`}
+                    style={{ height: `${isZero ? 6 : barHeightPct}%` }}
+                    title={`Data: ${day.dayLabel} | Vendas: ${formatCurrency(day.revenue)} | Compras: ${formatCurrency(day.purchases)} | Mão de obra: ${formatCurrency(day.labor)}`}
+                  />
+                </div>
+                <div className="chart-label-day">
+                  <strong>{day.weekday}</strong>
+                  <span>{day.dayLabel}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

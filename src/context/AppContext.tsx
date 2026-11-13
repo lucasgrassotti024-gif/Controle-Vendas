@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   Ingredient, 
   BrownieRecipe, 
@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { initialIngredients, initialBrownies } from '../storage/initialData';
 import { storageService } from '../storage/storageService';
+import { syncService } from '../services/syncService';
 import { 
   convertToBaseUnit, 
   calculateCostPerBaseUnit, 
@@ -24,6 +25,9 @@ interface AppContextType {
   productions: ProductionBatch[];
   sales: Sale[];
   metrics: DashboardMetrics;
+
+  // Status de sincronização
+  isOnline: boolean;
 
   // Mapa rápido de ingredientes por ID
   ingredientsMap: Map<string, Ingredient>;
@@ -48,42 +52,94 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Estados locais sincronizados
   const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
     const data = storageService.getIngredients();
-    // Remove definitivamente qualquer resquício de mão de obra do estoque
     const cleaned = data.filter(i => 
       i.id !== 'ing-mao-obra' && 
       !i.name.toLowerCase().includes('mão de obra') && 
       !i.name.toLowerCase().includes('mao de obra')
     );
-
-    if (cleaned.length === 0) {
-      storageService.saveIngredients(initialIngredients);
-      return initialIngredients;
-    }
-    return cleaned;
+    return cleaned.length > 0 ? cleaned : initialIngredients;
   });
 
   const [brownies, setBrownies] = useState<BrownieRecipe[]>(() => {
     const data = storageService.getBrownies();
-    // Limpa mão de obra dos items das receitas antigas e garante laborCost = 1
     const cleanedBrownies = data.map(b => ({
       ...b,
       laborCost: b.laborCost ?? 1.00,
       items: b.items.filter(it => it.ingredientId !== 'ing-mao-obra')
     }));
-
-    if (cleanedBrownies.length === 0) {
-      storageService.saveBrownies(initialBrownies);
-      return initialBrownies;
-    }
-    return cleanedBrownies;
+    return cleanedBrownies.length > 0 ? cleanedBrownies : initialBrownies;
   });
+
   const [purchases, setPurchases] = useState<Purchase[]>(() => storageService.getPurchases());
   const [productions, setProductions] = useState<ProductionBatch[]>(() => storageService.getProductions());
   const [sales, setSales] = useState<Sale[]>(() => storageService.getSales());
+  const [isOnline] = useState<boolean>(true);
 
-  // Salvar no LocalStorage sempre que alterar
+  // Flag para evitar loops de re-upload ao receber snapshot do Firestore
+  const isSyncingFromRemote = useRef(false);
+
+  // 1. SINCRONIZAÇÃO EM TEMPO REAL VIA FIRESTORE (Celular <-> Computador)
+  useEffect(() => {
+    // Escuta alterações em ingredientes
+    const unsubIngredients = syncService.subscribeIngredients((remoteIngredients) => {
+      if (remoteIngredients && remoteIngredients.length > 0) {
+        isSyncingFromRemote.current = true;
+        setIngredients(remoteIngredients);
+        storageService.saveIngredients(remoteIngredients);
+        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      } else {
+        // Se a nuvem estiver vazia, sobe os dados iniciais
+        syncService.seedInitialDataIfEmpty(ingredients, brownies);
+      }
+    });
+
+    // Escuta alterações em brownies
+    const unsubBrownies = syncService.subscribeBrownies((remoteBrownies) => {
+      if (remoteBrownies && remoteBrownies.length > 0) {
+        isSyncingFromRemote.current = true;
+        setBrownies(remoteBrownies);
+        storageService.saveBrownies(remoteBrownies);
+        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      }
+    });
+
+    // Escuta alterações em compras
+    const unsubPurchases = syncService.subscribePurchases((remotePurchases) => {
+      isSyncingFromRemote.current = true;
+      setPurchases(remotePurchases);
+      storageService.savePurchases(remotePurchases);
+      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+    });
+
+    // Escuta alterações em produções
+    const unsubProductions = syncService.subscribeProductions((remoteProductions) => {
+      isSyncingFromRemote.current = true;
+      setProductions(remoteProductions);
+      storageService.saveProductions(remoteProductions);
+      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+    });
+
+    // Escuta alterações em vendas
+    const unsubSales = syncService.subscribeSales((remoteSales) => {
+      isSyncingFromRemote.current = true;
+      setSales(remoteSales);
+      storageService.saveSales(remoteSales);
+      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+    });
+
+    return () => {
+      unsubIngredients();
+      unsubBrownies();
+      unsubPurchases();
+      unsubProductions();
+      unsubSales();
+    };
+  }, []);
+
+  // Salvar no LocalStorage como cache offline
   useEffect(() => {
     storageService.saveIngredients(ingredients);
   }, [ingredients]);
@@ -144,25 +200,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // Atualiza ingrediente com novo estoque e preço recalculado
+    let updatedTargetIng: Ingredient | null = null;
     const updatedIngredients = ingredients.map(ing => {
       if (ing.id === ingredient.id) {
-        // Custo médio ponderado
         const currentTotalCost = ing.currentStock * ing.costPerBaseUnit;
         const newTotalCost = currentTotalCost + data.totalCost;
         const newTotalStock = ing.currentStock + baseQuantityAdded;
         const newAvgCost = newTotalStock > 0 ? (newTotalCost / newTotalStock) : calculatedCostPerBase;
 
-        return {
+        const updated = {
           ...ing,
           currentStock: newTotalStock,
           costPerBaseUnit: Number(newAvgCost.toFixed(4)),
         };
+        updatedTargetIng = updated;
+        return updated;
       }
       return ing;
     });
 
     setPurchases([newPurchase, ...purchases]);
     setIngredients(updatedIngredients);
+
+    // Salva na nuvem Firestore
+    syncService.savePurchase(newPurchase);
+    if (updatedTargetIng) {
+      syncService.saveIngredient(updatedTargetIng);
+    }
   };
 
   /**
@@ -194,25 +258,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const totalBatchCost = unitCost * unitsProduced;
 
     // 3. Deduzir insumos
+    const changedIngredients: Ingredient[] = [];
     const updatedIngredients = ingredients.map(ing => {
       const recipeItem = recipe.items.find(item => item.ingredientId === ing.id);
       if (recipeItem) {
         const consumed = recipeItem.quantity * batchesCount;
-        return {
+        const updated = {
           ...ing,
           currentStock: Math.max(0, ing.currentStock - consumed)
         };
+        changedIngredients.push(updated);
+        return updated;
       }
       return ing;
     });
 
     // 4. Aumentar estoque de brownies prontos
+    let changedBrownie: BrownieRecipe | null = null;
     const updatedBrownies = brownies.map(b => {
       if (b.id === recipe.id) {
-        return {
+        const updated = {
           ...b,
           currentStock: b.currentStock + unitsProduced
         };
+        changedBrownie = updated;
+        return updated;
       }
       return b;
     });
@@ -230,6 +300,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIngredients(updatedIngredients);
     setBrownies(updatedBrownies);
     setProductions([newProduction, ...productions]);
+
+    // Salva na nuvem Firestore
+    syncService.saveProduction(newProduction);
+    changedIngredients.forEach(ing => syncService.saveIngredient(ing));
+    if (changedBrownie) {
+      syncService.saveBrownie(changedBrownie);
+    }
 
     return { success: true };
   };
@@ -264,18 +341,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // Deduz do estoque de prontos
+    let changedBrownie: BrownieRecipe | null = null;
     const updatedBrownies = brownies.map(b => {
       if (b.id === brownie.id) {
-        return {
+        const updated = {
           ...b,
           currentStock: b.currentStock - data.quantity
         };
+        changedBrownie = updated;
+        return updated;
       }
       return b;
     });
 
     setBrownies(updatedBrownies);
     setSales([newSale, ...sales]);
+
+    // Sincroniza na nuvem
+    syncService.saveSale(newSale);
+    if (changedBrownie) {
+      syncService.saveBrownie(changedBrownie);
+    }
 
     return { success: true };
   };
@@ -285,17 +371,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
    * Converte a venda pendente em 'pago', somando à receita realizada.
    */
   const settlePendingSale = (saleId: string) => {
+    let updatedSaleObj: Sale | null = null;
     const updatedSales = sales.map(s => {
       if (s.id === saleId && s.status === 'pendente') {
-        return {
+        const updated = {
           ...s,
           status: 'pago' as const,
           paidAt: new Date().toISOString(),
         };
+        updatedSaleObj = updated;
+        return updated;
       }
       return s;
     });
     setSales(updatedSales);
+
+    if (updatedSaleObj) {
+      syncService.saveSale(updatedSaleObj);
+    }
   };
 
   // Cadastro e Atualização de Insumos
@@ -305,22 +398,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: 'ing-' + Date.now(),
     };
     setIngredients([...ingredients, newIng]);
+    syncService.saveIngredient(newIng);
   };
 
   const updateIngredient = (updated: Ingredient) => {
     setIngredients(ingredients.map(i => i.id === updated.id ? updated : i));
+    syncService.saveIngredient(updated);
   };
 
   const deleteIngredient = (id: string): { success: boolean; message?: string } => {
-    // Se estiver em receitas, remove o item das receitas automaticamente para não travar
     const updatedBrownies = brownies.map(b => ({
       ...b,
       items: b.items.filter(it => it.ingredientId !== id)
     }));
     setBrownies(updatedBrownies);
-
-    // Remove do estoque
     setIngredients(ingredients.filter(i => i.id !== id));
+
+    // Nuvem
+    syncService.deleteIngredient(id);
+    updatedBrownies.forEach(b => syncService.saveBrownie(b));
     return { success: true };
   };
 
@@ -332,14 +428,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentStock: 0,
     };
     setBrownies([...brownies, newRecipe]);
+    syncService.saveBrownie(newRecipe);
   };
 
   const updateBrownieRecipe = (updated: BrownieRecipe) => {
     setBrownies(brownies.map(b => b.id === updated.id ? updated : b));
+    syncService.saveBrownie(updated);
   };
 
   const deleteBrownieRecipe = (id: string) => {
     setBrownies(brownies.filter(b => b.id !== id));
+    syncService.deleteBrownie(id);
   };
 
   /**
@@ -358,19 +457,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         purchase.unit,
         ing.baseUnit
       );
+      let updatedTargetIng: Ingredient | null = null;
       const updatedIngredients = ingredients.map(i => {
         if (i.id === ing.id) {
-          return {
+          const updated = {
             ...i,
             currentStock: Math.max(0, i.currentStock - baseQtyToDeduct)
           };
+          updatedTargetIng = updated;
+          return updated;
         }
         return i;
       });
       setIngredients(updatedIngredients);
+      if (updatedTargetIng) {
+        syncService.saveIngredient(updatedTargetIng);
+      }
     }
 
     setPurchases(purchases.filter(p => p.id !== purchaseId));
+    syncService.deletePurchase(purchaseId);
   };
 
   /**
@@ -382,19 +488,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const sale = sales.find(s => s.id === saleId);
     if (!sale) return;
 
-    // Devolve os brownies ao estoque
+    let updatedBrownieTarget: BrownieRecipe | null = null;
     const updatedBrownies = brownies.map(b => {
       if (b.id === sale.brownieRecipeId) {
-        return {
+        const updated = {
           ...b,
           currentStock: b.currentStock + sale.quantity
         };
+        updatedBrownieTarget = updated;
+        return updated;
       }
       return b;
     });
 
     setBrownies(updatedBrownies);
     setSales(sales.filter(s => s.id !== saleId));
+
+    syncService.deleteSale(saleId);
+    if (updatedBrownieTarget) {
+      syncService.saveBrownie(updatedBrownieTarget);
+    }
   };
 
   // Reset total
@@ -405,6 +518,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPurchases([]);
     setProductions([]);
     setSales([]);
+    syncService.seedInitialDataIfEmpty(storageService.getIngredients(), storageService.getBrownies());
   };
 
   // Métricas do Dashboard calculadas reativamente
@@ -419,6 +533,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         productions,
         sales,
         metrics,
+        isOnline,
         ingredientsMap,
         addPurchase,
         addProduction,

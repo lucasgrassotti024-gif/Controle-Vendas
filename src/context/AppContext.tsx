@@ -34,7 +34,7 @@ interface AppContextType {
 
   // Métodos de Ação (Conexões do Sistema)
   addPurchase: (data: Omit<Purchase, 'id' | 'calculatedCostPerBaseUnit'>) => void;
-  addProduction: (recipeId: string, batchesCount: number) => { success: boolean; message?: string };
+  addProduction: (recipeId: string, batchesCount: number, producedBy?: 'proprio' | 'terceiro') => { success: boolean; message?: string };
   addSale: (data: Omit<Sale, 'id'>) => { success: boolean; message?: string };
   settlePendingSale: (saleId: string) => void; // Baixa de Fiado
   addIngredient: (ingredient: Omit<Ingredient, 'id'>) => void;
@@ -45,7 +45,7 @@ interface AppContextType {
   deleteBrownieRecipe: (id: string) => void;
   deletePurchase: (purchaseId: string) => void;
   deleteSale: (saleId: string) => void;
-  getBrownieUnitCost: (recipe: BrownieRecipe) => number;
+  getBrownieUnitCost: (recipe: BrownieRecipe, includeLabor?: boolean) => number;
   resetAllData: () => void;
 }
 
@@ -175,8 +175,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   // Calcula custo de produção de um brownie
-  const getBrownieUnitCost = (recipe: BrownieRecipe): number => {
-    return calculateBrownieUnitCost(recipe, ingredientsMap);
+  const getBrownieUnitCost = (recipe: BrownieRecipe, includeLabor: boolean = true): number => {
+    return calculateBrownieUnitCost(recipe, ingredientsMap, includeLabor);
   };
 
   /**
@@ -243,8 +243,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
    * Valida se há insumos suficientes.
    * (-) Deduz insumos consumidos do estoque de ingredientes.
    * (+) Adiciona as unidades de brownies produzidas ao estoque de prontos.
+   * producedBy: 'proprio' (você fez, sem custo de mão de obra) ou 'terceiro' (outra pessoa fez, R$ 1,00/un)
    */
-  const addProduction = (recipeId: string, batchesCount: number): { success: boolean; message?: string } => {
+  const addProduction = (
+    recipeId: string, 
+    batchesCount: number,
+    producedBy: 'proprio' | 'terceiro' = 'terceiro'
+  ): { success: boolean; message?: string } => {
     const recipe = brownies.find(b => b.id === recipeId);
     if (!recipe) return { success: false, message: 'Receita não encontrada.' };
     if (batchesCount <= 0) return { success: false, message: 'Quantidade de fornadas inválida.' };
@@ -261,10 +266,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    // 2. Calcular custo unitário no momento exato
-    const unitCost = getBrownieUnitCost(recipe);
+    // 2. Calcular custo unitário e de mão de obra conforme quem produziu
+    const includeLabor = producedBy === 'terceiro';
+    const unitCost = getBrownieUnitCost(recipe, includeLabor);
     const unitsProduced = recipe.yieldUnits * batchesCount;
     const totalBatchCost = unitCost * unitsProduced;
+    const laborPerUnit = includeLabor ? (recipe.laborCost || 1.00) : 0;
+    const laborCostTotal = laborPerUnit * unitsProduced;
 
     // 3. Deduzir insumos
     const changedIngredients: Ingredient[] = [];
@@ -303,7 +311,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       batchesCount,
       unitsProduced,
       unitProductionCost: Number(unitCost.toFixed(2)),
-      totalCost: Number(totalBatchCost.toFixed(2))
+      totalCost: Number(totalBatchCost.toFixed(2)),
+      producedBy,
+      laborCostTotal: Number(laborCostTotal.toFixed(2))
     };
 
     setIngredients(updatedIngredients);
@@ -319,6 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return { success: true };
   };
+
 
   /**
    * 3. VENDA:
@@ -530,8 +541,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncService.seedInitialDataIfEmpty(storageService.getIngredients(), storageService.getBrownies());
   };
 
-  // Métricas do Dashboard calculadas reativamente
-  const metrics = computeDashboardMetrics(sales, purchases, ingredients, brownies);
+  // Métricas do Dashboard calculadas reativamente (inclui mão de obra de produções)
+  const metrics = computeDashboardMetrics(sales, purchases, ingredients, brownies, productions);
 
   return (
     <AppContext.Provider

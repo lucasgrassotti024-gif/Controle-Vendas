@@ -49,6 +49,8 @@ export interface Purchase {
 }
 
 // 4. Ordem de Produção (Fornada / Fabricação)
+export type ProductionAuthor = 'proprio' | 'terceiro';
+
 export interface ProductionBatch {
   id: string;
   date: string;                    // ISO date
@@ -57,6 +59,8 @@ export interface ProductionBatch {
   unitsProduced: number;           // total de unidades prontas geradas (ex: 16)
   unitProductionCost: number;      // custo calculado de fazer cada brownie naquele momento
   totalCost: number;               // custo total da produção
+  producedBy?: ProductionAuthor;   // 'proprio' (sem mão de obra) ou 'terceiro' (com mão de obra de R$ 1/un)
+  laborCostTotal?: number;         // valor total gasto em mão de obra nessa fornada
 }
 
 // Formas de Pagamento
@@ -81,10 +85,12 @@ export interface Sale {
 export interface DashboardMetrics {
   totalRevenue: number;            // Faturamento realizado (vendas pagas)
   totalPurchasesCost: number;      // Total gasto em compras de insumos
-  netProfit: number;               // totalRevenue - totalPurchasesCost
+  totalLaborSpent: number;         // Total gasto com mão de obra de terceiros
+  netProfit: number;               // totalRevenue - totalPurchasesCost - totalLaborSpent
   pendingReceivables: number;      // Total de fiados não recebidos
   pendingSalesCount: number;       // Quantas vendas fiado em aberto
   stockFinishedUnits: number;      // Total de brownies prontos para venda
   stockInsumosValue: number;       // Valor em R$ imobilizado em insumos
   lowStockIngredientsCount: number;// Quantos insumos estão abaixo do estoque mínimo
 }
+

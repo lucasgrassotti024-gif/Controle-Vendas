@@ -5,6 +5,7 @@ import {
   BrownieRecipe, 
   Sale, 
   Purchase, 
+  ProductionBatch,
   DashboardMetrics 
 } from '../types';
 
@@ -39,10 +40,12 @@ export function calculateCostPerBaseUnit(
 
 /**
  * Calcula o custo de fabricação de 1 brownie específico somando seus ingredientes atuais.
+ * @param includeLabor Se true (padrão), soma a mão de obra de terceiros. Se false (produção própria), soma apenas insumos.
  */
 export function calculateBrownieUnitCost(
   recipe: BrownieRecipe, 
-  ingredientsMap: Map<string, Ingredient>
+  ingredientsMap: Map<string, Ingredient>,
+  includeLabor: boolean = true
 ): number {
   if (!recipe.items || recipe.items.length === 0) return 0;
 
@@ -57,7 +60,7 @@ export function calculateBrownieUnitCost(
 
   const yieldCount = recipe.yieldUnits > 0 ? recipe.yieldUnits : 1;
   const ingredientsUnitCost = totalRecipeCost / yieldCount;
-  const labor = recipe.laborCost || 0;
+  const labor = includeLabor ? (recipe.laborCost || 0) : 0;
   return ingredientsUnitCost + labor;
 }
 
@@ -90,7 +93,8 @@ export function computeDashboardMetrics(
   sales: Sale[],
   purchases: Purchase[],
   ingredients: Ingredient[],
-  brownies: BrownieRecipe[]
+  brownies: BrownieRecipe[],
+  productions: ProductionBatch[] = []
 ): DashboardMetrics {
   // Faturamento das vendas pagas
   const totalRevenue = sales
@@ -105,8 +109,13 @@ export function computeDashboardMetrics(
   // Total gasto em compras de insumos
   const totalPurchasesCost = purchases.reduce((acc, p) => acc + p.totalCost, 0);
 
-  // Lucro líquido real do negócio
-  const netProfit = totalRevenue - totalPurchasesCost;
+  // Total pago com mão de obra terceirizada
+  const totalLaborSpent = productions.reduce((acc, prod) => {
+    return acc + (prod.laborCostTotal || 0);
+  }, 0);
+
+  // Lucro líquido real do negócio (Faturamento - Insumos - Mão de obra paga)
+  const netProfit = totalRevenue - totalPurchasesCost - totalLaborSpent;
 
   // Saldo de brownies prontos
   const stockFinishedUnits = brownies.reduce((acc, b) => acc + (b.currentStock || 0), 0);
@@ -124,6 +133,7 @@ export function computeDashboardMetrics(
   return {
     totalRevenue,
     totalPurchasesCost,
+    totalLaborSpent,
     netProfit,
     pendingReceivables,
     pendingSalesCount,
@@ -132,3 +142,4 @@ export function computeDashboardMetrics(
     lowStockIngredientsCount,
   };
 }
+

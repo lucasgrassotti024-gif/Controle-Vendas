@@ -82,7 +82,11 @@ export const DashboardPage: React.FC = () => {
             <strong className="kpi-value" style={{ color: metrics.netProfit >= 0 ? 'var(--color-accent)' : '#ff6b6b' }}>
               {formatCurrency(metrics.netProfit)}
             </strong>
-            <span className="kpi-subtext">Faturamento menos Compras</span>
+            <span className="kpi-subtext">
+              {metrics.totalLaborSpent > 0 
+                ? `Vendas - Compras - ${formatCurrency(metrics.totalLaborSpent)} mão de obra` 
+                : 'Faturamento menos Compras de Insumos'}
+            </span>
           </div>
         </div>
 

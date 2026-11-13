@@ -57,15 +57,30 @@ export const ProducaoPage: React.FC = () => {
   const [tempIngId, setTempIngId] = useState(ingredients[0]?.id || '');
   const [tempQty, setTempQty] = useState('');
 
-  const handleProduce = (recipeId: string) => {
-    const batches = 1;
-    const result = addProduction(recipeId, batches);
+  // Modal de Produzir Fornada (Quem fez: Eu ou Outra Pessoa)
+  const [producingRecipe, setProducingRecipe] = useState<BrownieRecipe | null>(null);
+  const [productionAuthor, setProductionAuthor] = useState<'proprio' | 'terceiro'>('proprio');
+  const [productionBatches, setProductionBatches] = useState<number>(1);
+
+  const handleOpenProduceModal = (recipe: BrownieRecipe) => {
+    setProducingRecipe(recipe);
+    setProductionAuthor('proprio'); // Padrão: Eu fiz (sem mão de obra)
+    setProductionBatches(1);
+  };
+
+  const handleConfirmProduce = () => {
+    if (!producingRecipe) return;
+
+    const result = addProduction(producingRecipe.id, productionBatches, productionAuthor);
 
     if (result.success) {
+      const units = producingRecipe.yieldUnits * productionBatches;
+      const authorText = productionAuthor === 'proprio' ? 'Produção própria (sem custo de mão de obra)' : 'Feito por outra pessoa (+R$ 1,00/un mão de obra)';
       setFeedbackMessage({
-        text: `Produção de 1 fornada registrada! Brownies prontos adicionados ao estoque.`,
+        text: `Fornada de ${producingRecipe.name} registrada com sucesso! (+${units} brownies prontos). ${authorText}.`,
         type: 'success'
       });
+      setProducingRecipe(null);
     } else {
       setFeedbackMessage({
         text: result.message || 'Erro ao registrar produção.',
@@ -75,7 +90,7 @@ export const ProducaoPage: React.FC = () => {
 
     setTimeout(() => {
       setFeedbackMessage(null);
-    }, 4500);
+    }, 5000);
   };
 
   const handleAddItemToRecipe = () => {
@@ -260,8 +275,8 @@ export const ProducaoPage: React.FC = () => {
                   <div className="recipe-actions-primary">
                     <button
                       className="btn-produce-clean"
-                      onClick={() => handleProduce(recipe.id)}
-                      title="Produzir 1 fornada"
+                      onClick={() => handleOpenProduceModal(recipe)}
+                      title="Produzir fornada"
                     >
                       <Flame size={15} />
                       Produzir
@@ -384,8 +399,9 @@ export const ProducaoPage: React.FC = () => {
                     <button
                       className="btn-primary"
                       onClick={() => {
-                        handleProduce(selectedRecipeForDetails.id);
+                        const target = selectedRecipeForDetails;
                         setSelectedRecipeForDetails(null);
+                        handleOpenProduceModal(target);
                       }}
                     >
                       <Flame size={16} />
@@ -417,6 +433,7 @@ export const ProducaoPage: React.FC = () => {
               <tr>
                 <th>Data</th>
                 <th>Brownie</th>
+                <th>Feito Por</th>
                 <th>Qtd Pronta</th>
                 <th>Custo Total</th>
                 <th>Custo/Fatia</th>
@@ -433,6 +450,8 @@ export const ProducaoPage: React.FC = () => {
                   minute: '2-digit'
                 });
 
+                const isThirdParty = prod.producedBy === 'terceiro';
+
                 return (
                   <tr key={prod.id}>
                     <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -443,6 +462,34 @@ export const ProducaoPage: React.FC = () => {
                     </td>
                     <td>
                       <strong>{recipe ? recipe.name : 'Receita'}</strong>
+                    </td>
+                    <td>
+                      {isThirdParty ? (
+                        <span style={{
+                          backgroundColor: 'rgba(224, 159, 62, 0.15)',
+                          color: 'var(--color-accent)',
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          💼 Outra Pessoa (+{formatCurrency(prod.laborCostTotal || 0)})
+                        </span>
+                      ) : (
+                        <span style={{
+                          backgroundColor: 'rgba(46, 213, 115, 0.15)',
+                          color: '#2ed573',
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}>
+                          👨‍🍳 Eu Mesmo (Sem mão de obra)
+                        </span>
+                      )}
                     </td>
                     <td>
                       <strong style={{ color: '#2ed573' }}>
@@ -457,7 +504,7 @@ export const ProducaoPage: React.FC = () => {
 
               {productions.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     Nenhuma fornada registrada ainda. Clique em "Produzir" no card para fabricar brownies!
                   </td>
                 </tr>
@@ -466,6 +513,161 @@ export const ProducaoPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal de Produzir Fornada (Quem produziu: Eu ou Outra Pessoa) */}
+      {producingRecipe && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Flame size={22} color="var(--color-accent)" />
+                <h2 className="modal-title">Produzir {producingRecipe.name}</h2>
+              </div>
+              <button onClick={() => setProducingRecipe(null)}>
+                <X size={20} color="var(--text-muted)" />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Ao registrar a fornada, os ingredientes serão deduzidos da despensa e as unidades prontas entrarão no estoque.
+            </p>
+
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label">Quantidade de Fornadas:</label>
+              <input
+                type="number"
+                min="1"
+                className="form-input"
+                value={productionBatches}
+                onChange={(e) => setProductionBatches(Math.max(1, parseInt(e.target.value, 10) || 1))}
+              />
+              <span style={{ fontSize: '0.78rem', color: '#2ed573', marginTop: '4px' }}>
+                Total a produzir: {producingRecipe.yieldUnits * productionBatches} unidades
+              </span>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" style={{ fontWeight: 700 }}>
+                Quem fez essa fornada?
+              </label>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                {/* Opção 1: Eu Fiz (Sem custo de mão de obra) */}
+                <label 
+                  onClick={() => setProductionAuthor('proprio')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '12px var(--spacing-md)',
+                    borderRadius: 'var(--radius-md)',
+                    border: `2px solid ${productionAuthor === 'proprio' ? 'var(--color-accent)' : 'var(--border-subtle)'}`,
+                    backgroundColor: productionAuthor === 'proprio' ? 'rgba(224, 159, 62, 0.08)' : 'var(--bg-app)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="author"
+                    checked={productionAuthor === 'proprio'}
+                    onChange={() => setProductionAuthor('proprio')}
+                    style={{ marginTop: '3px' }}
+                  />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.92rem', color: 'var(--text-main)' }}>
+                      👨‍🍳 Eu Mesmo Fiz
+                    </strong>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Não gasta mão de obra. Custo = apenas ingredientes ({formatCurrency(getBrownieUnitCost(producingRecipe, false))}/un).
+                    </span>
+                  </div>
+                </label>
+
+                {/* Opção 2: Outra Pessoa Fez (+R$ 1,00/un mão de obra) */}
+                <label 
+                  onClick={() => setProductionAuthor('terceiro')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '12px var(--spacing-md)',
+                    borderRadius: 'var(--radius-md)',
+                    border: `2px solid ${productionAuthor === 'terceiro' ? 'var(--color-accent)' : 'var(--border-subtle)'}`,
+                    backgroundColor: productionAuthor === 'terceiro' ? 'rgba(224, 159, 62, 0.08)' : 'var(--bg-app)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="author"
+                    checked={productionAuthor === 'terceiro'}
+                    onChange={() => setProductionAuthor('terceiro')}
+                    style={{ marginTop: '3px' }}
+                  />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.92rem', color: 'var(--text-main)' }}>
+                      💼 Outra Pessoa Fez
+                    </strong>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Gasta mão de obra de +{formatCurrency(producingRecipe.laborCost || 1.00)}/unidade (Total de mão de obra: {formatCurrency((producingRecipe.laborCost || 1.00) * producingRecipe.yieldUnits * productionBatches)}).
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Resumo financeiro da fornada */}
+            <div style={{
+              backgroundColor: 'var(--bg-app)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px var(--spacing-md)',
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Custo por Brownie
+                </span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-accent)' }}>
+                  {formatCurrency(getBrownieUnitCost(producingRecipe, productionAuthor === 'terceiro'))}/un
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Custo Total da Fornada
+                </span>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+                  {formatCurrency(getBrownieUnitCost(producingRecipe, productionAuthor === 'terceiro') * producingRecipe.yieldUnits * productionBatches)}
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setProducingRecipe(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleConfirmProduce}
+              >
+                <Flame size={16} />
+                Confirmar Produção
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Criação/Edição de Receita */}
       {isModalOpen && (

@@ -237,13 +237,23 @@ export const VendasPage: React.FC = () => {
               type="submit"
               className="btn-primary"
               style={{ width: '100%', justifyContent: 'center' }}
-              disabled={!selectedBrownie || selectedBrownie.currentStock < parsedQty}
+              disabled={!selectedBrownie || parsedQty <= 0}
             >
-              {selectedBrownie && selectedBrownie.currentStock < parsedQty
-                ? `Estoque Insuficiente (${selectedBrownie.currentStock} un)`
-                : `Confirmar Venda (${formatCurrency(totalSaleAmount)})`}
+              Confirmar Venda ({formatCurrency(totalSaleAmount)})
             </button>
+            {selectedBrownie && selectedBrownie.currentStock < parsedQty && (
+              <span style={{ 
+                display: 'block', 
+                textAlign: 'center', 
+                fontSize: '0.75rem', 
+                color: 'var(--color-warning)', 
+                marginTop: '8px' 
+              }}>
+                ⚠️ Estoque cadastrado ({selectedBrownie.currentStock} un). A venda será registrada normalmente!
+              </span>
+            )}
           </form>
+
         </div>
 
         {/* Resumo Rápido de Fiados Pendentes */}

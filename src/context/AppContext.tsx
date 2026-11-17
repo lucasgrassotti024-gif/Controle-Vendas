@@ -333,8 +333,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   /**
    * 3. VENDA:
-   * Valida se há brownies prontos no estoque.
-   * (-) Deduz brownies vendidos do estoque de prontos.
+   * Permite vender com ou sem estoque pré-cadastrado.
+   * (-) Deduz brownies vendidos do estoque de prontos (se houver).
    * (+) Alimenta faturamento ou fiado a receber.
    */
   const addSale = (data: Omit<Sale, 'id'>): { success: boolean; message?: string } => {
@@ -342,13 +342,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!brownie) return { success: false, message: 'Brownie não encontrado.' };
 
     if (data.quantity <= 0) return { success: false, message: 'Quantidade deve ser maior que zero.' };
-
-    if (brownie.currentStock < data.quantity) {
-      return { 
-        success: false, 
-        message: `Estoque insuficiente de ${brownie.name}. Disponível para entrega: ${brownie.currentStock} un.` 
-      };
-    }
 
     if (data.paymentMethod === 'fiado' && (!data.customerName || data.customerName.trim() === '')) {
       return { success: false, message: 'O nome do cliente é obrigatório para compras no Fiado.' };
@@ -360,13 +353,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: data.paymentMethod === 'fiado' ? 'pendente' : 'pago',
     };
 
-    // Deduz do estoque de prontos
+    // Deduz do estoque de prontos (se tiver estoque, abate; se não tiver, zera para não negativar)
     let changedBrownie: BrownieRecipe | null = null;
     const updatedBrownies = brownies.map(b => {
       if (b.id === brownie.id) {
         const updated = {
           ...b,
-          currentStock: b.currentStock - data.quantity
+          currentStock: Math.max(0, b.currentStock - data.quantity)
         };
         changedBrownie = updated;
         return updated;
@@ -385,6 +378,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return { success: true };
   };
+
 
   /**
    * 4. BAIXA DE FIADO:

@@ -98,22 +98,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Escuta alterações em brownies
     const unsubBrownies = syncService.subscribeBrownies((remoteBrownies) => {
-      if (remoteBrownies && remoteBrownies.length > 0) {
-        isSyncingFromRemote.current = true;
-        // Garante que fotos oficiais de initialBrownies sejam mantidas caso ausentes no banco remoto
-        const enriched = remoteBrownies.map(b => {
-          const matchInitial = initialBrownies.find(ib => ib.id === b.id);
-          return {
-            ...b,
-            imageUrl: b.imageUrl || matchInitial?.imageUrl,
-            laborCost: b.laborCost ?? 1.00
-          };
-        });
-        setBrownies(enriched);
-        storageService.saveBrownies(enriched);
-        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      isSyncingFromRemote.current = true;
+      
+      // Mapeia brownies remotos com enriquecimento de foto/mão de obra
+      const remoteMap = new Map((remoteBrownies || []).map(b => [b.id, b]));
+      
+      // Garante que todos os 3 sabores oficiais existam
+      const mergedList: BrownieRecipe[] = [...(remoteBrownies || [])];
+      
+      for (const standard of initialBrownies) {
+        if (!remoteMap.has(standard.id)) {
+          mergedList.push(standard);
+          // Grava na nuvem o sabor que estava ausente
+          syncService.saveBrownie(standard);
+        }
       }
+
+      const enriched = mergedList.map(b => {
+        const matchInitial = initialBrownies.find(ib => ib.id === b.id);
+        return {
+          ...b,
+          imageUrl: b.imageUrl || matchInitial?.imageUrl,
+          laborCost: b.laborCost ?? 1.00
+        };
+      });
+
+      setBrownies(enriched);
+      storageService.saveBrownies(enriched);
+      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
     });
+
 
     // Escuta alterações em compras
     const unsubPurchases = syncService.subscribePurchases((remotePurchases) => {

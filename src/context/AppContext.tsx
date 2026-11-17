@@ -117,27 +117,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Escuta alterações em compras
     const unsubPurchases = syncService.subscribePurchases((remotePurchases) => {
-      isSyncingFromRemote.current = true;
-      setPurchases(remotePurchases);
-      storageService.savePurchases(remotePurchases);
-      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      if (remotePurchases && remotePurchases.length > 0) {
+        isSyncingFromRemote.current = true;
+        setPurchases(remotePurchases);
+        storageService.savePurchases(remotePurchases);
+        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      } else {
+        // Se a nuvem estiver vazia e tivermos dados locais, sobe para a nuvem
+        const local = storageService.getPurchases();
+        if (local.length > 0) {
+          local.forEach(p => syncService.savePurchase(p));
+        }
+      }
     });
 
     // Escuta alterações em produções
     const unsubProductions = syncService.subscribeProductions((remoteProductions) => {
-      isSyncingFromRemote.current = true;
-      setProductions(remoteProductions);
-      storageService.saveProductions(remoteProductions);
-      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      if (remoteProductions && remoteProductions.length > 0) {
+        isSyncingFromRemote.current = true;
+        setProductions(remoteProductions);
+        storageService.saveProductions(remoteProductions);
+        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      } else {
+        const local = storageService.getProductions();
+        if (local.length > 0) {
+          local.forEach(prod => syncService.saveProduction(prod));
+        }
+      }
     });
 
     // Escuta alterações em vendas
     const unsubSales = syncService.subscribeSales((remoteSales) => {
-      isSyncingFromRemote.current = true;
-      setSales(remoteSales);
-      storageService.saveSales(remoteSales);
-      setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      if (remoteSales && remoteSales.length > 0) {
+        isSyncingFromRemote.current = true;
+        setSales(remoteSales);
+        storageService.saveSales(remoteSales);
+        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
+      } else {
+        const local = storageService.getSales();
+        if (local.length > 0) {
+          local.forEach(s => syncService.saveSale(s));
+        }
+      }
     });
+
 
     return () => {
       unsubIngredients();

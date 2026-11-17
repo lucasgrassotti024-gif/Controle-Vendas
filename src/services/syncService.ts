@@ -22,6 +22,25 @@ const COLLECTIONS = {
   SALES: 'sales',
 };
 
+// Remove propriedades com valor undefined que o Firestore rejeita
+function cleanData<T extends Record<string, any>>(obj: T): T {
+  const result: any = {};
+  for (const key of Object.keys(obj)) {
+    if (obj[key] !== undefined) {
+      if (Array.isArray(obj[key])) {
+        result[key] = obj[key].map((item: any) => 
+          typeof item === 'object' && item !== null ? cleanData(item) : item
+        );
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        result[key] = cleanData(obj[key]);
+      } else {
+        result[key] = obj[key];
+      }
+    }
+  }
+  return result as T;
+}
+
 export const syncService = {
   // --- INGREDIENTES ---
   subscribeIngredients: (callback: (data: Ingredient[]) => void) => {
@@ -35,7 +54,7 @@ export const syncService = {
 
   saveIngredient: async (ingredient: Ingredient) => {
     try {
-      await setDoc(doc(db, COLLECTIONS.INGREDIENTS, ingredient.id), ingredient);
+      await setDoc(doc(db, COLLECTIONS.INGREDIENTS, ingredient.id), cleanData(ingredient));
     } catch (e) {
       console.error('Falha ao salvar ingrediente no Firestore:', e);
     }
@@ -61,7 +80,7 @@ export const syncService = {
 
   saveBrownie: async (brownie: BrownieRecipe) => {
     try {
-      await setDoc(doc(db, COLLECTIONS.BROWNIES, brownie.id), brownie);
+      await setDoc(doc(db, COLLECTIONS.BROWNIES, brownie.id), cleanData(brownie));
     } catch (e) {
       console.error('Falha ao salvar brownie no Firestore:', e);
     }
@@ -87,7 +106,7 @@ export const syncService = {
 
   savePurchase: async (purchase: Purchase) => {
     try {
-      await setDoc(doc(db, COLLECTIONS.PURCHASES, purchase.id), purchase);
+      await setDoc(doc(db, COLLECTIONS.PURCHASES, purchase.id), cleanData(purchase));
     } catch (e) {
       console.error('Falha ao salvar compra no Firestore:', e);
     }
@@ -113,7 +132,7 @@ export const syncService = {
 
   saveProduction: async (production: ProductionBatch) => {
     try {
-      await setDoc(doc(db, COLLECTIONS.PRODUCTIONS, production.id), production);
+      await setDoc(doc(db, COLLECTIONS.PRODUCTIONS, production.id), cleanData(production));
     } catch (e) {
       console.error('Falha ao salvar produção no Firestore:', e);
     }
@@ -139,7 +158,7 @@ export const syncService = {
 
   saveSale: async (sale: Sale) => {
     try {
-      await setDoc(doc(db, COLLECTIONS.SALES, sale.id), sale);
+      await setDoc(doc(db, COLLECTIONS.SALES, sale.id), cleanData(sale));
     } catch (e) {
       console.error('Falha ao salvar venda no Firestore:', e);
     }
@@ -152,6 +171,7 @@ export const syncService = {
       console.error('Falha ao deletar venda no Firestore:', e);
     }
   },
+
 
   /**
    * Inicializa o banco de dados do Firestore com os dados iniciais caso esteja vazio.

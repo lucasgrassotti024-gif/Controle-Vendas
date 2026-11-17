@@ -84,9 +84,11 @@ export interface Sale {
 // Resumo Geral Financeiro / Operacional para o Dashboard
 export interface DashboardMetrics {
   totalRevenue: number;            // Faturamento realizado (vendas pagas)
+  totalCostOfGoodsSold: number;    // Custo real dos produtos vendidos (ingredientes + mão de obra se houver)
+  netProfit: number;               // Lucro líquido real das vendas (Faturamento - Custo de fabricação do que foi vendido)
   totalPurchasesCost: number;      // Total gasto em compras de insumos
   totalLaborSpent: number;         // Total gasto com mão de obra de terceiros
-  netProfit: number;               // totalRevenue - totalPurchasesCost - totalLaborSpent
+  cashFlowBalance: number;         // Saldo em caixa do período (Entradas - Saídas reais de compras e mão de obra)
   pendingReceivables: number;      // Total de fiados não recebidos
   pendingSalesCount: number;       // Quantas vendas fiado em aberto
   stockFinishedUnits: number;      // Total de brownies prontos para venda
@@ -95,5 +97,6 @@ export interface DashboardMetrics {
   totalStockInvested: number;      // Dinheiro total gasto imobilizado no estoque (insumos + brownies)
   lowStockIngredientsCount: number;// Quantos insumos estão abaixo do estoque mínimo
 }
+
 
 

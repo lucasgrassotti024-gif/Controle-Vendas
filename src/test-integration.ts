@@ -72,14 +72,18 @@ function runIntegrityTests() {
 
   const metrics = computeDashboardMetrics(sampleSales, samplePurchases, initialIngredients, initialBrownies);
 
+  const expectedCogs = 5 * unitCost;
+  const expectedProfit = 40 - expectedCogs;
+
   console.assert(metrics.totalRevenue === 40, `Erro faturamento: esperado 40, obteve ${metrics.totalRevenue}`);
   console.assert(metrics.pendingReceivables === 16, `Erro fiados: esperado 16, obteve ${metrics.pendingReceivables}`);
   console.assert(metrics.totalPurchasesCost === 110, `Erro compras: esperado 110, obteve ${metrics.totalPurchasesCost}`);
-  console.assert(metrics.netProfit === (40 - 110), `Erro lucro líquido: esperado -70, obteve ${metrics.netProfit}`);
+  console.assert(Math.abs(metrics.totalCostOfGoodsSold - expectedCogs) < 0.01, `Erro CPV: esperado ${expectedCogs}, obteve ${metrics.totalCostOfGoodsSold}`);
+  console.assert(Math.abs(metrics.netProfit - expectedProfit) < 0.01, `Erro lucro líquido: esperado ${expectedProfit}, obteve ${metrics.netProfit}`);
 
   console.log('✓ Teste 5: Faturamento das vendas pagas isolado corretamente (R$ 40,00)');
   console.log('✓ Teste 6: Fiados pendentes isolados no contas a receber (R$ 16,00)');
-  console.log('✓ Teste 7: Apuração de compras e lucro líquido com precisão decimal exata');
+  console.log(`✓ Teste 7: CPV e Lucro Líquido apurados com precisão decimal exata (CPV: R$ ${metrics.totalCostOfGoodsSold.toFixed(2)} | Lucro Real: R$ ${metrics.netProfit.toFixed(2)})`);
 
   console.log('\n--- TODOS OS TESTES DE REGRAS DE NEGÓCIO PASSARAM COM 100% DE SUCESSO! ---');
 }

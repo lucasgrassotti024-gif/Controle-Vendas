@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   TrendingUp, 
-  ShoppingCart, 
   DollarSign, 
   Clock, 
   Boxes, 
@@ -28,12 +27,12 @@ import './Dashboard.css';
 export const DashboardPage: React.FC = () => {
   const { metrics, brownies, ingredients, sales, purchases, productions, resetAllData } = useApp();
 
-  // Lucro da Semana e do Mês
-  const weeklyProfit = getWeeklyProfit(sales, purchases, productions);
-  const monthlyProfit = getMonthlyProfit(sales, purchases, productions);
+  // Lucro da Semana e do Mês (baseado nas vendas reais e custo dos produtos vendidos)
+  const weeklyProfit = getWeeklyProfit(sales, purchases, productions, ingredients, brownies);
+  const monthlyProfit = getMonthlyProfit(sales, purchases, productions, ingredients, brownies);
 
   // Histórico Diário (últimos 7 dias)
-  const dailyHistory = getDailyProfitHistory(sales, purchases, productions, 7);
+  const dailyHistory = getDailyProfitHistory(sales, purchases, productions, ingredients, brownies, 7);
   const maxDayNetProfit = Math.max(...dailyHistory.map(d => Math.abs(d.netProfit)), 50);
 
   const handleReset = () => {
@@ -59,7 +58,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 1. Grid dos 4 KPIs Financeiros Centrais */}
+      {/* 1. Grid dos KPIs Financeiros Centrais */}
       <div className="dashboard-kpi-grid">
         {/* KPI 1: Faturamento */}
         <div className="kpi-card revenue">
@@ -67,29 +66,29 @@ export const DashboardPage: React.FC = () => {
             <TrendingUp size={24} />
           </div>
           <div className="kpi-data">
-            <span className="kpi-label">Faturamento Realizado</span>
+            <span className="kpi-label">Faturamento Bruto</span>
             <strong className="kpi-value" style={{ color: '#2ed573' }}>
               {formatCurrency(metrics.totalRevenue)}
             </strong>
-            <span className="kpi-subtext">Vendas pagas à vista ou quitadas</span>
+            <span className="kpi-subtext">Total arrecadado com vendas pagas</span>
           </div>
         </div>
 
-        {/* KPI 2: Total em Compras */}
+        {/* KPI 2: Custo dos Brownies Vendidos (CPV) */}
         <div className="kpi-card purchases">
-          <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(201, 42, 42, 0.15)', color: '#ff6b6b' }}>
-            <ShoppingCart size={24} />
+          <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+            <Package size={24} />
           </div>
           <div className="kpi-data">
-            <span className="kpi-label">Total em Compras</span>
-            <strong className="kpi-value" style={{ color: '#ff6b6b' }}>
-              {formatCurrency(metrics.totalPurchasesCost)}
+            <span className="kpi-label">Custo dos Produtos Vendidos</span>
+            <strong className="kpi-value" style={{ color: '#ef4444' }}>
+              {formatCurrency(metrics.totalCostOfGoodsSold)}
             </strong>
-            <span className="kpi-subtext">Insumos e embalagens adquiridos</span>
+            <span className="kpi-subtext">Custo de fabricação do que foi vendido</span>
           </div>
         </div>
 
-        {/* KPI 3: Lucro Líquido Real */}
+        {/* KPI 3: Lucro Líquido Real das Vendas */}
         <div className="kpi-card profit">
           <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(224, 159, 62, 0.15)', color: 'var(--color-accent)' }}>
             <DollarSign size={24} />
@@ -100,9 +99,7 @@ export const DashboardPage: React.FC = () => {
               {formatCurrency(metrics.netProfit)}
             </strong>
             <span className="kpi-subtext">
-              {metrics.totalLaborSpent > 0 
-                ? `Vendas - Compras - ${formatCurrency(metrics.totalLaborSpent)} mão de obra` 
-                : 'Faturamento menos Compras de Insumos'}
+              Faturamento ({formatCurrency(metrics.totalRevenue)}) - Custo ({formatCurrency(metrics.totalCostOfGoodsSold)})
             </span>
           </div>
         </div>
@@ -137,7 +134,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* KPI 6: Lucro da Semana Atual (Igual aos outros) */}
+        {/* KPI 6: Lucro da Semana Atual */}
         <div className="kpi-card week">
           <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
             <Calendar size={24} />
@@ -148,12 +145,12 @@ export const DashboardPage: React.FC = () => {
               {formatCurrency(weeklyProfit.netProfit)}
             </strong>
             <span className="kpi-subtext">
-              Vendas {formatCurrency(weeklyProfit.revenue)} - Compras {formatCurrency(weeklyProfit.purchases)}
+              Vendas {formatCurrency(weeklyProfit.revenue)} - Custo {formatCurrency(weeklyProfit.cogs)}
             </span>
           </div>
         </div>
 
-        {/* KPI 7: Lucro do Mês Atual (Igual aos outros) */}
+        {/* KPI 7: Lucro do Mês Atual */}
         <div className="kpi-card month">
           <div className="kpi-icon-box" style={{ backgroundColor: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' }}>
             <CalendarDays size={24} />
@@ -164,7 +161,7 @@ export const DashboardPage: React.FC = () => {
               {formatCurrency(monthlyProfit.netProfit)}
             </strong>
             <span className="kpi-subtext">
-              Vendas {formatCurrency(monthlyProfit.revenue)} - Compras {formatCurrency(monthlyProfit.purchases)}
+              Vendas {formatCurrency(monthlyProfit.revenue)} - Custo {formatCurrency(monthlyProfit.cogs)}
             </span>
           </div>
         </div>
@@ -180,12 +177,12 @@ export const DashboardPage: React.FC = () => {
               Evolução do Lucro Diário (Últimos 7 Dias)
             </div>
             <p className="chart-subtitle">
-              Acompanhe a variação diária de lucro líquido (Vendas - Compras - Mão de obra).
+              Acompanhe o lucro líquido apurado a cada dia (Faturamento menos Custo dos brownies vendidos).
             </p>
           </div>
           <div className="chart-legend">
             <span className="legend-item"><span className="legend-dot profit"></span> Lucro Positivo</span>
-            <span className="legend-item"><span className="legend-dot loss"></span> Despesa/Prejuízo</span>
+            <span className="legend-item"><span className="legend-dot loss"></span> Sem Lucro / Negativo</span>
           </div>
         </div>
 
@@ -205,7 +202,7 @@ export const DashboardPage: React.FC = () => {
                   <div
                     className={`chart-bar ${isPositive ? 'positive' : 'negative'} ${isZero ? 'zero' : ''}`}
                     style={{ height: `${isZero ? 6 : barHeightPct}%` }}
-                    title={`Data: ${day.dayLabel} | Vendas: ${formatCurrency(day.revenue)} | Compras: ${formatCurrency(day.purchases)} | Mão de obra: ${formatCurrency(day.labor)}`}
+                    title={`Data: ${day.dayLabel} | Vendas: ${formatCurrency(day.revenue)} | Custo de Fabricação: ${formatCurrency(day.cogs)} | Lucro Real: ${formatCurrency(day.netProfit)}`}
                   />
                 </div>
                 <div className="chart-label-day">

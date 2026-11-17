@@ -96,10 +96,29 @@ export function computeDashboardMetrics(
   brownies: BrownieRecipe[],
   productions: ProductionBatch[] = []
 ): DashboardMetrics {
+  // Mapa de ingredientes para calcular custos dos brownies
+  const ingredientsMap = new Map<string, Ingredient>(
+    ingredients.map(ing => [ing.id, ing])
+  );
+  const browniesMap = new Map<string, BrownieRecipe>(
+    brownies.map(b => [b.id, b])
+  );
+
   // Faturamento das vendas pagas
-  const totalRevenue = sales
-    .filter(s => s.status === 'pago')
-    .reduce((acc, s) => acc + s.totalAmount, 0);
+  const paidSales = sales.filter(s => s.status === 'pago');
+  const totalRevenue = paidSales.reduce((acc, s) => acc + s.totalAmount, 0);
+
+  // Custo Real dos Produtos Vendidos (CPV): Insumos + Mão de obra da receita para cada unidade vendida
+  const totalCostOfGoodsSold = paidSales.reduce((acc, s) => {
+    const brownie = browniesMap.get(s.brownieRecipeId);
+    if (!brownie) return acc;
+    // Custo de fabricação de 1 brownie (ingredientes + mão de obra se houver)
+    const unitCost = calculateBrownieUnitCost(brownie, ingredientsMap, true);
+    return acc + (s.quantity * unitCost);
+  }, 0);
+
+  // Lucro Líquido Real das Vendas: Faturamento realizado menos o Custo real dos produtos vendidos
+  const netProfit = totalRevenue - totalCostOfGoodsSold;
 
   // Fiados em aberto
   const pendingSales = sales.filter(s => s.status === 'pendente');
@@ -109,26 +128,21 @@ export function computeDashboardMetrics(
   // Total gasto em compras de insumos
   const totalPurchasesCost = purchases.reduce((acc, p) => acc + p.totalCost, 0);
 
-  // Total pago com mão de obra terceirizada
+  // Total pago com mão de obra terceirizada de fornadas
   const totalLaborSpent = productions.reduce((acc, prod) => {
     return acc + (prod.laborCostTotal || 0);
   }, 0);
 
-  // Lucro líquido real do negócio (Faturamento - Insumos - Mão de obra paga)
-  const netProfit = totalRevenue - totalPurchasesCost - totalLaborSpent;
+  // Saldo de Caixa Operacional (Entradas em dinheiro - Compras de insumos - Mão de obra paga)
+  const cashFlowBalance = totalRevenue - totalPurchasesCost - totalLaborSpent;
 
   // Saldo de brownies prontos
   const stockFinishedUnits = brownies.reduce((acc, b) => acc + (b.currentStock || 0), 0);
 
   // Valor imobilizado em insumos da despensa (estoque * custo base)
   const stockInsumosValue = ingredients.reduce((acc, ing) => {
-    return acc + (ing.currentStock * ing.costPerBaseUnit);
+    return acc + (Math.max(0, ing.currentStock) * ing.costPerBaseUnit);
   }, 0);
-
-  // Mapa de ingredientes para calcular custo dos brownies prontos
-  const ingredientsMap = new Map<string, Ingredient>(
-    ingredients.map(ing => [ing.id, ing])
-  );
 
   // Valor em dinheiro gasto nos brownies prontos no estoque
   const stockFinishedValue = brownies.reduce((acc, b) => {
@@ -147,9 +161,11 @@ export function computeDashboardMetrics(
 
   return {
     totalRevenue,
+    totalCostOfGoodsSold,
+    netProfit,
     totalPurchasesCost,
     totalLaborSpent,
-    netProfit,
+    cashFlowBalance,
     pendingReceivables,
     pendingSalesCount,
     stockFinishedUnits,
@@ -165,22 +181,32 @@ export interface DailyProfitPoint {
   dayLabel: string;     // ex: "13/11" ou "Qui"
   weekday: string;      // ex: "Qui"
   revenue: number;      // faturamento realizado
-  purchases: number;    // despesas em insumos
-  labor: number;        // mão de obra paga
-  netProfit: number;    // lucro líquido do dia
+  cogs: number;         // custo dos brownies vendidos
+  purchases: number;    // compras de insumos no dia
+  labor: number;        // mão de obra paga no dia
+  netProfit: number;    // lucro líquido real das vendas do dia
 }
 
 /**
- * Agrupa o histórico dos últimos N dias (padrão 7 dias) apurando faturamento, despesas e lucro por dia.
+ * Agrupa o histórico dos últimos N dias (padrão 7 dias) apurando faturamento, custo dos brownies vendidos e lucro por dia.
  */
 export function getDailyProfitHistory(
   sales: Sale[],
   purchases: Purchase[],
   productions: ProductionBatch[],
+  ingredients: Ingredient[] = [],
+  brownies: BrownieRecipe[] = [],
   daysCount: number = 7
 ): DailyProfitPoint[] {
   const result: DailyProfitPoint[] = [];
   const now = new Date();
+
+  const ingredientsMap = new Map<string, Ingredient>(
+    ingredients.map(ing => [ing.id, ing])
+  );
+  const browniesMap = new Map<string, BrownieRecipe>(
+    brownies.map(b => [b.id, b])
+  );
 
   // Gera os últimos N dias em ordem cronológica
   for (let i = daysCount - 1; i >= 0; i--) {
@@ -196,13 +222,21 @@ export function getDailyProfitHistory(
     const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
 
     // Vendas pagas do dia
-    const dayRevenue = sales
-      .filter(s => {
-        if (s.status !== 'pago') return false;
-        const sDate = new Date(s.paidAt || s.date);
-        return sDate >= d && sDate < nextD;
-      })
-      .reduce((acc, s) => acc + s.totalAmount, 0);
+    const dayPaidSales = sales.filter(s => {
+      if (s.status !== 'pago') return false;
+      const sDate = new Date(s.paidAt || s.date);
+      return sDate >= d && sDate < nextD;
+    });
+
+    const dayRevenue = dayPaidSales.reduce((acc, s) => acc + s.totalAmount, 0);
+
+    // Custo real dos produtos vendidos no dia
+    const dayCogs = dayPaidSales.reduce((acc, s) => {
+      const brownie = browniesMap.get(s.brownieRecipeId);
+      if (!brownie) return acc;
+      const unitCost = calculateBrownieUnitCost(brownie, ingredientsMap, true);
+      return acc + (s.quantity * unitCost);
+    }, 0);
 
     // Compras realizadas no dia
     const dayPurchases = purchases
@@ -220,13 +254,18 @@ export function getDailyProfitHistory(
       })
       .reduce((acc, prod) => acc + (prod.laborCostTotal || 0), 0);
 
-    const netProfit = dayRevenue - dayPurchases - dayLabor;
+    // Lucro líquido diário baseado na margem real dos brownies vendidos
+    // Se não tiver produtos cadastrados ainda, usa o fluxo de caixa clássico
+    const netProfit = dayCogs > 0 || brownies.length > 0
+      ? dayRevenue - dayCogs
+      : dayRevenue - dayPurchases - dayLabor;
 
     result.push({
       dateKey,
       dayLabel,
       weekday,
       revenue: dayRevenue,
+      cogs: dayCogs,
       purchases: dayPurchases,
       labor: dayLabor,
       netProfit,
@@ -242,8 +281,10 @@ export function getDailyProfitHistory(
 export function getWeeklyProfit(
   sales: Sale[],
   purchases: Purchase[],
-  productions: ProductionBatch[]
-): { netProfit: number; revenue: number; purchases: number; labor: number } {
+  productions: ProductionBatch[],
+  ingredients: Ingredient[] = [],
+  brownies: BrownieRecipe[] = []
+): { netProfit: number; revenue: number; cogs: number; purchases: number; labor: number } {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0 domingo, 1 segunda ...
   const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -252,9 +293,22 @@ export function getWeeklyProfit(
   startOfWeek.setDate(now.getDate() - diffToMonday);
   startOfWeek.setHours(0, 0, 0, 0);
 
-  const revenue = sales
-    .filter(s => s.status === 'pago' && new Date(s.paidAt || s.date) >= startOfWeek)
-    .reduce((acc, s) => acc + s.totalAmount, 0);
+  const ingredientsMap = new Map<string, Ingredient>(
+    ingredients.map(ing => [ing.id, ing])
+  );
+  const browniesMap = new Map<string, BrownieRecipe>(
+    brownies.map(b => [b.id, b])
+  );
+
+  const weeklySales = sales.filter(s => s.status === 'pago' && new Date(s.paidAt || s.date) >= startOfWeek);
+  const revenue = weeklySales.reduce((acc, s) => acc + s.totalAmount, 0);
+
+  const cogs = weeklySales.reduce((acc, s) => {
+    const brownie = browniesMap.get(s.brownieRecipeId);
+    if (!brownie) return acc;
+    const unitCost = calculateBrownieUnitCost(brownie, ingredientsMap, true);
+    return acc + (s.quantity * unitCost);
+  }, 0);
 
   const purchasesCost = purchases
     .filter(p => new Date(p.date) >= startOfWeek)
@@ -264,9 +318,14 @@ export function getWeeklyProfit(
     .filter(prod => new Date(prod.date) >= startOfWeek)
     .reduce((acc, prod) => acc + (prod.laborCostTotal || 0), 0);
 
+  const netProfit = cogs > 0 || brownies.length > 0
+    ? revenue - cogs
+    : revenue - purchasesCost - laborCost;
+
   return {
-    netProfit: revenue - purchasesCost - laborCost,
+    netProfit,
     revenue,
+    cogs,
     purchases: purchasesCost,
     labor: laborCost,
   };
@@ -278,14 +337,29 @@ export function getWeeklyProfit(
 export function getMonthlyProfit(
   sales: Sale[],
   purchases: Purchase[],
-  productions: ProductionBatch[]
-): { netProfit: number; revenue: number; purchases: number; labor: number } {
+  productions: ProductionBatch[],
+  ingredients: Ingredient[] = [],
+  brownies: BrownieRecipe[] = []
+): { netProfit: number; revenue: number; cogs: number; purchases: number; labor: number } {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 
-  const revenue = sales
-    .filter(s => s.status === 'pago' && new Date(s.paidAt || s.date) >= startOfMonth)
-    .reduce((acc, s) => acc + s.totalAmount, 0);
+  const ingredientsMap = new Map<string, Ingredient>(
+    ingredients.map(ing => [ing.id, ing])
+  );
+  const browniesMap = new Map<string, BrownieRecipe>(
+    brownies.map(b => [b.id, b])
+  );
+
+  const monthlySales = sales.filter(s => s.status === 'pago' && new Date(s.paidAt || s.date) >= startOfMonth);
+  const revenue = monthlySales.reduce((acc, s) => acc + s.totalAmount, 0);
+
+  const cogs = monthlySales.reduce((acc, s) => {
+    const brownie = browniesMap.get(s.brownieRecipeId);
+    if (!brownie) return acc;
+    const unitCost = calculateBrownieUnitCost(brownie, ingredientsMap, true);
+    return acc + (s.quantity * unitCost);
+  }, 0);
 
   const purchasesCost = purchases
     .filter(p => new Date(p.date) >= startOfMonth)
@@ -295,9 +369,14 @@ export function getMonthlyProfit(
     .filter(prod => new Date(prod.date) >= startOfMonth)
     .reduce((acc, prod) => acc + (prod.laborCostTotal || 0), 0);
 
+  const netProfit = cogs > 0 || brownies.length > 0
+    ? revenue - cogs
+    : revenue - purchasesCost - laborCost;
+
   return {
-    netProfit: revenue - purchasesCost - laborCost,
+    netProfit,
     revenue,
+    cogs,
     purchases: purchasesCost,
     labor: laborCost,
   };

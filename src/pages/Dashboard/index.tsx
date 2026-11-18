@@ -4,8 +4,6 @@ import {
   DollarSign, 
   Clock, 
   Boxes, 
-  AlertTriangle, 
-  CheckCircle2, 
   Package, 
   RotateCcw,
   Sparkles,
@@ -17,7 +15,6 @@ import {
 import { useApp } from '../../context/AppContext';
 import { 
   formatCurrency, 
-  formatStock,
   getDailyProfitHistory,
   getWeeklyProfit,
   getMonthlyProfit
@@ -40,9 +37,6 @@ export const DashboardPage: React.FC = () => {
       resetAllData();
     }
   };
-
-  // Insumos que estão no limite ou abaixo do estoque mínimo
-  const criticalIngredients = ingredients.filter(ing => ing.currentStock <= ing.minStock);
 
   return (
     <div>
@@ -259,75 +253,6 @@ export const DashboardPage: React.FC = () => {
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Painel: Saúde do Estoque & Alertas de Compras */}
-        <div className="dashboard-panel">
-          <div className="panel-header">
-            <div className="panel-title">
-              <Boxes size={20} color="var(--color-accent)" />
-              Valor Imobilizado & Alertas
-            </div>
-          </div>
-
-          <div style={{
-            background: 'var(--bg-app)',
-            borderRadius: 'var(--radius-md)',
-            padding: '16px',
-            marginBottom: '20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Valor em Matéria-Prima:</span>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-                {formatCurrency(metrics.stockInsumosValue)}
-              </div>
-            </div>
-            <span className="badge badge-tag">
-              {ingredients.length} insumos cadastrados
-            </span>
-          </div>
-
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <AlertTriangle size={16} color="var(--color-warning)" />
-              Insumos Abaixo do Mínimo ({criticalIngredients.length})
-            </div>
-
-            {criticalIngredients.map((ing) => (
-              <div key={ing.id} className="critical-item-card">
-                <div>
-                  <strong style={{ color: 'var(--text-main)' }}>{ing.name}</strong>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Alerta configurado para: {formatStock(ing.minStock, ing.baseUnit)}
-                  </div>
-                </div>
-                <strong style={{ color: '#ffa502' }}>
-                  Restam: {formatStock(ing.currentStock, ing.baseUnit)}
-                </strong>
-              </div>
-            ))}
-
-            {criticalIngredients.length === 0 && (
-              <div style={{
-                textAlign: 'center',
-                padding: '20px',
-                color: '#2ed573',
-                fontSize: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                background: 'rgba(27, 135, 85, 0.08)',
-                borderRadius: 'var(--radius-md)'
-              }}>
-                <CheckCircle2 size={16} />
-                Todos os insumos estão com estoque saudável!
-              </div>
-            )}
           </div>
         </div>
       </div>

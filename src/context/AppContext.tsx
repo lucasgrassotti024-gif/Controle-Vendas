@@ -85,14 +85,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     // Escuta alterações em ingredientes
     const unsubIngredients = syncService.subscribeIngredients((remoteIngredients) => {
+      isSyncingFromRemote.current = true;
       if (remoteIngredients && remoteIngredients.length > 0) {
-        isSyncingFromRemote.current = true;
-        setIngredients(remoteIngredients);
-        storageService.saveIngredients(remoteIngredients);
+        // Mapeia remotos e garante que todos os 14 insumos padrão da Veneza Brownies existam com custos de referência
+        const remoteMap = new Map(remoteIngredients.map(i => [i.id, i]));
+        const mergedList: Ingredient[] = [...remoteIngredients];
+
+        for (const standard of initialIngredients) {
+          if (!remoteMap.has(standard.id)) {
+            mergedList.push(standard);
+            syncService.saveIngredient(standard);
+          } else {
+            // Atualiza custo unitário de referência se estiver com valor antigo ou zero
+            const remoteItem = remoteMap.get(standard.id)!;
+            if (remoteItem.costPerBaseUnit <= 0 || !remoteItem.name) {
+              const updated = { ...remoteItem, costPerBaseUnit: standard.costPerBaseUnit, name: standard.name };
+              syncService.saveIngredient(updated);
+            }
+          }
+        }
+
+        setIngredients(mergedList);
+        storageService.saveIngredients(mergedList);
         setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
       } else {
         // Se a nuvem estiver vazia, sobe os dados iniciais
-        syncService.seedInitialDataIfEmpty(ingredients, brownies);
+        setIngredients(initialIngredients);
+        storageService.saveIngredients(initialIngredients);
+        syncService.seedInitialDataIfEmpty(initialIngredients, brownies);
+        setTimeout(() => { isSyncingFromRemote.current = false; }, 100);
       }
     });
 
@@ -100,7 +121,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubBrownies = syncService.subscribeBrownies((remoteBrownies) => {
       isSyncingFromRemote.current = true;
       
-      // Mapeia brownies remotos com enriquecimento de foto/mão de obra
+      // Mapeia brownies remotos com enriquecimento de foto/mão de obra e itens de receita
       const remoteMap = new Map((remoteBrownies || []).map(b => [b.id, b]));
       
       // Garante que todos os 3 sabores oficiais existam
@@ -119,7 +140,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...b,
           imageUrl: b.imageUrl || matchInitial?.imageUrl,
-          laborCost: b.laborCost ?? 1.00
+          laborCost: b.laborCost ?? (matchInitial?.laborCost || 1.00),
+          yieldUnits: b.yieldUnits || matchInitial?.yieldUnits || 8,
+          // Se a receita remota estiver sem itens ou desatualizada, usa a receita oficial
+          items: (b.items && b.items.length > 0) ? b.items : (matchInitial?.items || [])
         };
       });
 

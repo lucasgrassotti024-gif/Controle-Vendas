@@ -440,7 +440,9 @@ export const ProducaoPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {productions.map((prod) => {
+              {[...productions]
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((prod) => {
                 const recipe = brownies.find(b => b.id === prod.brownieRecipeId);
                 const dateStr = new Date(prod.date).toLocaleDateString('pt-BR', {
                   day: '2-digit',

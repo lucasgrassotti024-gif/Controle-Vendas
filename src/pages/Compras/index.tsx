@@ -204,7 +204,9 @@ export const ComprasPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {purchases.map((p) => {
+                {[...purchases]
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .map((p) => {
                   const ing = ingredientsMap.get(p.ingredientId);
                   const dateStr = new Date(p.date).toLocaleDateString('pt-BR', {
                     day: '2-digit',

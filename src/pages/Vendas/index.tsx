@@ -92,7 +92,8 @@ export const VendasPage: React.FC = () => {
     }, 4500);
   };
 
-  const pendingSales = sales.filter(s => s.status === 'pendente');
+  const sortedSales = [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const pendingSales = sortedSales.filter(s => s.status === 'pendente');
   const totalPendingAmount = pendingSales.reduce((acc, s) => acc + s.totalAmount, 0);
 
   return (
@@ -383,7 +384,7 @@ export const VendasPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {sales.map((s) => {
+              {sortedSales.map((s) => {
                 const b = brownies.find(item => item.id === s.brownieRecipeId);
                 const dateStr = new Date(s.date).toLocaleDateString('pt-BR', {
                   day: '2-digit',

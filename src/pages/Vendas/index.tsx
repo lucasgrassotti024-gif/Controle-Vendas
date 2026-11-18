@@ -31,6 +31,7 @@ export const VendasPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [customerName, setCustomerName] = useState('');
   const [feedback, setFeedback] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedBrownie = brownies.find(b => b.id === selectedBrownieId);
 
@@ -48,7 +49,10 @@ export const VendasPage: React.FC = () => {
 
   const handleSubmitSale = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBrownie) return;
+    if (!selectedBrownie || parsedQty <= 0 || isSubmitting) return;
+
+    // Trava imediatamente contra múltiplos cliques
+    setIsSubmitting(true);
 
     const result = addSale({
       date: new Date().toISOString(),
@@ -63,10 +67,11 @@ export const VendasPage: React.FC = () => {
 
     if (result.success) {
       setFeedback({
-        text: `Venda de ${parsedQty}x ${selectedBrownie.name} confirmada! Estoque atualizado.`,
+        text: `✓ Venda de ${parsedQty}x ${selectedBrownie.name} confirmada! Estoque e Dashboard atualizados.`,
         type: 'success'
       });
-      setQuantity('1');
+      // Zera os campos para evitar que o usuário clique de novo na mesma venda por engano
+      setQuantity('');
       if (paymentMethod === 'fiado') {
         setCustomerName('');
       }
@@ -76,6 +81,11 @@ export const VendasPage: React.FC = () => {
         type: 'error'
       });
     }
+
+    // Libera o botão após 1 segundo de segurança
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 1000);
 
     setTimeout(() => {
       setFeedback(null);
@@ -148,6 +158,7 @@ export const VendasPage: React.FC = () => {
                   type="number"
                   min="1"
                   required
+                  placeholder="Ex: 1"
                   className="form-input"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
@@ -236,10 +247,15 @@ export const VendasPage: React.FC = () => {
             <button
               type="submit"
               className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center' }}
-              disabled={!selectedBrownie || parsedQty <= 0}
+              style={{ 
+                width: '100%', 
+                justifyContent: 'center', 
+                opacity: (isSubmitting || !selectedBrownie || parsedQty <= 0) ? 0.6 : 1,
+                cursor: (isSubmitting || !selectedBrownie || parsedQty <= 0) ? 'not-allowed' : 'pointer'
+              }}
+              disabled={isSubmitting || !selectedBrownie || parsedQty <= 0}
             >
-              Confirmar Venda ({formatCurrency(totalSaleAmount)})
+              {isSubmitting ? 'Registrando Venda...' : `Confirmar Venda (${formatCurrency(totalSaleAmount)})`}
             </button>
             {selectedBrownie && selectedBrownie.currentStock < parsedQty && (
               <span style={{ 

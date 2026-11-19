@@ -65,11 +65,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [brownies, setBrownies] = useState<BrownieRecipe[]>(() => {
     const data = storageService.getBrownies();
-    const cleanedBrownies = data.map(b => ({
-      ...b,
-      laborCost: b.laborCost ?? 1.00,
-      items: b.items.filter(it => it.ingredientId !== 'ing-mao-obra')
-    }));
+    const cleanedBrownies = data.map(b => {
+      const matchInitial = initialBrownies.find(ib => ib.id === b.id);
+      const isStandard = ['brownie-tradicional', 'brownie-branco', 'brownie-ganache'].includes(b.id);
+      const hasCompleteItems = matchInitial && b.items && b.items.length >= matchInitial.items.length;
+      return {
+        ...b,
+        laborCost: b.laborCost ?? (matchInitial?.laborCost || 1.00),
+        items: isStandard && (!hasCompleteItems || !b.items || b.items.length === 0)
+          ? matchInitial!.items
+          : (b.items || []).filter(it => it.ingredientId !== 'ing-mao-obra')
+      };
+    });
     return cleanedBrownies.length > 0 ? cleanedBrownies : initialBrownies;
   });
 
@@ -137,14 +144,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const enriched = mergedList.map(b => {
         const matchInitial = initialBrownies.find(ib => ib.id === b.id);
-        return {
+        if (!matchInitial) return b;
+
+        // Se a receita remota tiver itens incompletos (ex: menos itens que a ficha técnica padrão),
+        // recupera a ficha técnica oficial completa com todos os ingredientes e embalagens
+        const isStandard = ['brownie-tradicional', 'brownie-branco', 'brownie-ganache'].includes(b.id);
+        const hasCompleteItems = b.items && b.items.length >= matchInitial.items.length;
+        const resolvedItems = (!isStandard || hasCompleteItems) && b.items && b.items.length > 0 
+          ? b.items 
+          : matchInitial.items;
+
+        const updatedBrownie: BrownieRecipe = {
           ...b,
-          imageUrl: b.imageUrl || matchInitial?.imageUrl,
-          laborCost: b.laborCost ?? (matchInitial?.laborCost || 1.00),
-          yieldUnits: b.yieldUnits || matchInitial?.yieldUnits || 8,
-          // Se a receita remota estiver sem itens ou desatualizada, usa a receita oficial
-          items: (b.items && b.items.length > 0) ? b.items : (matchInitial?.items || [])
+          imageUrl: b.imageUrl || matchInitial.imageUrl,
+          laborCost: b.laborCost ?? (matchInitial.laborCost || 1.00),
+          yieldUnits: b.yieldUnits || matchInitial.yieldUnits || 8,
+          items: resolvedItems
         };
+
+        // Se os itens estavam incompletos no banco remoto, atualiza o Firestore com a ficha correta
+        if (isStandard && (!b.items || b.items.length < matchInitial.items.length)) {
+          syncService.saveBrownie(updatedBrownie);
+        }
+
+        return updatedBrownie;
       });
 
       setBrownies(enriched);
